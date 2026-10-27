@@ -1,0 +1,19 @@
+{
+  "name": "living-runtime",
+  "owner": {
+    "name": "Cihan Atak",
+    "url": "https://github.com/cihanatak"
+  },
+  "metadata": {
+    "description": "Claude Code plugins from LR (Living Runtime): memory that survives compaction and spans every session."
+  },
+  "plugins": [
+    {
+      "name": "lr-memory",
+      "source": "./plugins/lr-memory",
+      "description": "A verbatim working note across compaction, and a search over every past session (the recall skill). Local, no model tokens.",
+      "category": "productivity",
+      "keywords": ["memory", "compaction", "recall", "search"]
+    }
+  ]
+}

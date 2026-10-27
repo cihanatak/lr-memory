@@ -1,0 +1,26 @@
+{
+  "description": "lr-memory: a verbatim working note across compaction, and a search index over every past session",
+  "hooks": {
+    "PreCompact": [
+      {
+        "hooks": [
+          {"type": "command", "command": "sh \"${CLAUDE_PLUGIN_ROOT}/scripts/run.sh\" hook", "timeout": 60}
+        ]
+      }
+    ],
+    "PostCompact": [
+      {
+        "hooks": [
+          {"type": "command", "command": "sh \"${CLAUDE_PLUGIN_ROOT}/scripts/run.sh\" hook", "timeout": 30}
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {"type": "command", "command": "sh \"${CLAUDE_PLUGIN_ROOT}/scripts/run.sh\" hook", "timeout": 30}
+        ]
+      }
+    ]
+  }
+}

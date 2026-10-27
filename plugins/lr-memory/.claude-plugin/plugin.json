@@ -1,0 +1,14 @@
+{
+  "name": "lr-memory",
+  "displayName": "LR Memory",
+  "version": "0.1.0",
+  "description": "Keeps the working thread across compaction with a verbatim working note, and lets Claude search every past session instead of guessing. Local, no model tokens.",
+  "author": {
+    "name": "Cihan Atak",
+    "url": "https://github.com/cihanatak"
+  },
+  "homepage": "https://github.com/cihanatak/lr-memory",
+  "repository": "https://github.com/cihanatak/lr-memory",
+  "license": "MIT",
+  "keywords": ["memory", "compaction", "recall", "search", "transcripts", "context", "long-sessions"]
+}
