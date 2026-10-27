@@ -1,3 +1,5 @@
+![Living Runtime: Claude Code için açık kaynak eklentiler LR Memory ve COL](https://raw.githubusercontent.com/cihanatak/lr-memory/main/assets/banner.jpg)
+
 # Claude Code için LR Memory
 
 [English](README.md)

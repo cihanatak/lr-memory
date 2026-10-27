@@ -1,3 +1,5 @@
+![Living Runtime: LR Memory and COL, open-source plugins for Claude Code](https://raw.githubusercontent.com/cihanatak/lr-memory/main/assets/banner.jpg)
+
 # COL for Claude Code
 
 [Türkçe](README.tr.md)
