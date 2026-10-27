@@ -44,7 +44,8 @@ def test_each_skill_names_itself_and_its_launcher():
 
 def test_nothing_personal_ships():
     """The package was cut out of a personal setup: no path, user name, port or session of it may remain."""
-    banned = re.compile(r"F:[\\/]|ClaudeWorkspace|atakc|\.living-runtime|\b8766\b|TSİ|e7528c41", re.I)
+    # the time zone note is matched as written: blind to case it would find "tsi" in "outside"
+    banned = re.compile(r"F:[\\/]|ClaudeWorkspace|atakc|\.living-runtime|\b8766\b|(?-i:\bTSİ\b)|e7528c41", re.I)
     for p in ROOT.rglob("*"):
         if p.is_file() and p.name != "test_package.py" and not {".git", "__pycache__", ".pytest_cache"} & set(p.parts):
             assert not banned.search(p.read_text(encoding="utf-8", errors="replace")), p

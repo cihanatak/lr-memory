@@ -5,7 +5,7 @@
     "url": "https://github.com/cihanatak"
   },
   "metadata": {
-    "description": "Claude Code plugins from LR (Living Runtime): memory that survives compaction and spans every session."
+    "description": "Claude Code plugins from LR (Living Runtime): memory that survives compaction and spans every session, and COL, which checks claims against what actually ran."
   },
   "plugins": [
     {
@@ -14,6 +14,13 @@
       "description": "A verbatim working note across compaction, a search over every past session (the recall skill), and a daily sleep pass that turns your own words into memory rules (the sleep skill). The note and the search are local and spend no model tokens.",
       "category": "productivity",
       "keywords": ["memory", "compaction", "recall", "search", "sleep"]
+    },
+    {
+      "name": "col",
+      "source": "./plugins/col",
+      "description": "Checks Claude's last message against what ran (commits it names, files it cites, test counts it gives), keeps a ledger of measurable predictions before long jobs and irreversible steps and compares them with the results, and stops a commit or push that would carry a key. Local; no model calls.",
+      "category": "productivity",
+      "keywords": ["verification", "claims", "predictions", "calibration", "secrets", "git"]
     }
   ]
 }

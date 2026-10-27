@@ -1,0 +1,34 @@
+{
+  "description": "COL: claims checked against what ran, a ledger of measurable predictions, a key scan before commits and pushes",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {"type": "command", "command": "sh \"${CLAUDE_PLUGIN_ROOT}/scripts/run.sh\" hook", "timeout": 10}
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {"type": "command", "command": "sh \"${CLAUDE_PLUGIN_ROOT}/scripts/run.sh\" hook", "timeout": 10}
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {"type": "command", "command": "sh \"${CLAUDE_PLUGIN_ROOT}/scripts/run.sh\" hook", "timeout": 20}
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {"type": "command", "command": "sh \"${CLAUDE_PLUGIN_ROOT}/scripts/run.sh\" hook", "timeout": 30}
+        ]
+      }
+    ]
+  }
+}

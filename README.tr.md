@@ -124,9 +124,20 @@ python -m pytest tests
 
 Testler yalnız geçici klasörler kullanır. Gerçek `~/.claude`'u hiç okumaz, Claude'u başlatmaz ve ağa çıkmaz.
 
-## Yol haritası
+## COL, buradaki öbür eklenti
 
-- **COL:** ayrı bir eklenti. İddiaları araç çıktısıyla denetler, uzun işler için öngörü defteri tutar ve `git commit` ile `git push` öncesinde gizli anahtar taraması yapar.
+Bu pazaryerinde LR Memory'den bağımsız ikinci bir eklenti var. **COL** üç iş yapar:
+- Claude'un son mesajını gerçekten çalışanla karşılaştırır: andığı commit var olmalı, verdiği dosya diskte olmalı, söylediği test sayısı gerçek test çıktısında geçmeli.
+- Uzun işlerden ve geri alınamayan adımlardan önce ölçülebilir öngörülerden bir defter tutar ve onları sonuçlarla karşılaştırır.
+- Bir anahtar taşıyacak commit'i ya da push'u durdurur.
+
+Yereldir, hiç model çağırmaz.
+
+```
+/plugin install col@living-runtime
+```
+
+Ayrıntılar: [plugins/col/README.tr.md](plugins/col/README.tr.md).
 
 LR Memory, yazarın ajan çalışma ortamı LR'den (Living Runtime) ayrıldı. Orada Ekim 2026'dan beri çalışıyor.
 

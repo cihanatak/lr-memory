@@ -124,9 +124,20 @@ python -m pytest tests
 
 The tests use temporary folders only. They never read your real `~/.claude`, start Claude or touch the network.
 
-## Roadmap
+## COL, the other plugin here
 
-- **COL:** a separate plugin for checking claims against tool output, a prediction ledger for long jobs, and a secret scan before `git commit` and `git push`.
+This marketplace has a second plugin, independent of LR Memory. **COL** does three things:
+- It checks Claude's last message against what actually ran: a commit it names must exist, a file it cites must be on disk, and a test count must appear in real test output.
+- It keeps a ledger of measurable predictions before long jobs and steps that cannot be taken back, and compares them with the results.
+- It stops a commit or a push that would carry a key.
+
+It is local and makes no model calls.
+
+```
+/plugin install col@living-runtime
+```
+
+See [plugins/col/README.md](plugins/col/README.md).
 
 LR Memory is cut out of LR (Living Runtime), the author's agent runtime, where it has run since October 2026.
 
