@@ -86,3 +86,4 @@ The pilot ran on 28 October 2026 with Claude Code 2.1.308: three runs per task a
   - 4 had two or more.
 
   The tokens spent after a fix that did not hold were 4.1% of all tokens; after two or more, 0.23%. Even a perfect reflex can save only that slice. Its value, if any, is in the cause found and the symptom patch avoided.
+- The bench sessions are short: 60–130k tokens of context. The real chains ran at a median context of 560–660k, and only 16 of the 32 chains with one fix that did not hold ended with a passing check. Whether the reflex helps more in long sessions is not measured here.
