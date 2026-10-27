@@ -2,6 +2,8 @@
 
 # COL for Claude Code
 
+[![tests](https://github.com/cihanatak/lr-memory/actions/workflows/tests.yml/badge.svg)](https://github.com/cihanatak/lr-memory/actions/workflows/tests.yml)
+
 [Türkçe](README.tr.md)
 
 An agent can end a turn with "Done, all 12 tests passed" when no test ran, name a commit that does not exist, or commit a key it was never meant to commit. Asking the model to check itself does not fix this. Without an outside signal, self-correction does not make answers more accurate (Huang et al., [arXiv 2310.01798](https://arxiv.org/abs/2310.01798)). Agents also rate their own chances far too high: "some agents that succeed only 22% of the time predict 77% success" (Kaddour et al., [arXiv 2602.06948](https://arxiv.org/abs/2602.06948)).

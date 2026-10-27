@@ -2,6 +2,8 @@
 
 # Claude Code için LR Memory
 
+[![tests](https://github.com/cihanatak/lr-memory/actions/workflows/tests.yml/badge.svg)](https://github.com/cihanatak/lr-memory/actions/workflows/tests.yml)
+
 [English](README.md)
 
 Uzun Claude Code oturumları, sohbet özetlenince işin ipini kaybeder. Her yeni oturum eskilerden habersiz başlar ve geçen hafta yaptığın bir düzeltmeyi yeniden yapman gerekir. LR Memory üçünü de çözer:
