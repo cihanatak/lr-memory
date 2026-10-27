@@ -1,8 +1,8 @@
 {
   "name": "lr-memory",
   "displayName": "LR Memory",
-  "version": "0.1.0",
-  "description": "Keeps the working thread across compaction with a verbatim working note, and lets Claude search every past session instead of guessing. Local, no model tokens.",
+  "version": "0.2.0",
+  "description": "Keeps the working thread across compaction with a verbatim working note, lets Claude search every past session instead of guessing, and, when you ask for it, turns your own words into memory rules once a day. The note and the search are local and spend no model tokens.",
   "author": {
     "name": "Cihan Atak",
     "url": "https://github.com/cihanatak"
@@ -10,5 +10,6 @@
   "homepage": "https://github.com/cihanatak/lr-memory",
   "repository": "https://github.com/cihanatak/lr-memory",
   "license": "MIT",
-  "keywords": ["memory", "compaction", "recall", "search", "transcripts", "context", "long-sessions"]
+  "keywords": ["memory", "compaction", "recall", "search", "transcripts", "context", "long-sessions", "sleep",
+               "consolidation"]
 }

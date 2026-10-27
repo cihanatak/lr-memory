@@ -21,8 +21,6 @@ import math
 import os
 import re
 import sqlite3
-import subprocess
-import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -269,44 +267,13 @@ def update(budget: float | None = None, clock=time.time) -> dict:
 
 
 def background_update() -> dict | None:
-    """An update that runs once at a time across sessions: a lock file marks the running one, and a lock older than
-    an hour is taken for a run that died."""
-    common.DATA.mkdir(parents=True, exist_ok=True)
-    lock = common.DATA / "update.lock"
-    try:
-        if time.time() - lock.stat().st_mtime > STALE_LOCK_S:
-            lock.unlink()
-    except OSError:
-        pass
-    try:
-        fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-    except OSError:
-        return None
-    try:
-        os.write(fd, str(os.getpid()).encode())
-        os.close(fd)
-        return update()
-    finally:
-        try:
-            lock.unlink()
-        except OSError:
-            pass
+    """An update that runs once at a time across sessions; None when another one is running."""
+    return common.once("update.lock", STALE_LOCK_S, update)
 
 
 def spawn_update() -> None:
-    """Start `lrm.py update --background` detached, so that a session's first search finds the index ready."""
-    if os.environ.get("LR_MEMORY_NO_SPAWN"):
-        return
-    cmd = [sys.executable, str(Path(__file__).resolve().parent.parent / "lrm.py"), "update", "--background"]
-    kw = {"stdin": subprocess.DEVNULL, "stdout": subprocess.DEVNULL, "stderr": subprocess.DEVNULL, "close_fds": True}
-    if os.name != "nt":
-        subprocess.Popen(cmd, start_new_session=True, **kw)
-        return
-    flags = subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
-    try:  # outlive the hook even when Claude Code closes the job it ran the hook in
-        subprocess.Popen(cmd, creationflags=flags | subprocess.CREATE_BREAKAWAY_FROM_JOB, **kw)
-    except OSError:  # the job does not allow breaking away
-        subprocess.Popen(cmd, creationflags=flags, **kw)
+    """Index in the background, so that a session's first search finds the index ready."""
+    common.spawn("update", "--background")
 
 
 def _terms(query: str) -> list:

@@ -4,7 +4,9 @@ from __future__ import annotations
 import json
 import os
 import re
+import subprocess
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -72,6 +74,47 @@ def log_error(e: BaseException) -> None:
             f.write(f"{datetime.now(timezone.utc).isoformat()} {type(e).__name__}: {e}\n")
     except OSError:
         pass
+
+
+def once(name: str, stale_s: float, fn):
+    """fn() run once at a time across sessions: a lock file in DATA marks the running one, and a lock older than
+    stale_s is taken for a run that died. None when another run holds the lock."""
+    DATA.mkdir(parents=True, exist_ok=True)
+    lock = DATA / name
+    try:
+        if time.time() - lock.stat().st_mtime > stale_s:
+            lock.unlink()
+    except OSError:
+        pass
+    try:
+        fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+    except OSError:
+        return None
+    try:
+        os.write(fd, str(os.getpid()).encode())
+        os.close(fd)
+        return fn()
+    finally:
+        try:
+            lock.unlink()
+        except OSError:
+            pass
+
+
+def spawn(*args: str) -> None:
+    """Start `lrm.py <args>` detached, so that it outlives the hook that started it."""
+    if os.environ.get("LR_MEMORY_NO_SPAWN"):
+        return
+    cmd = [sys.executable, str(Path(__file__).resolve().parent.parent / "lrm.py"), *args]
+    kw = {"stdin": subprocess.DEVNULL, "stdout": subprocess.DEVNULL, "stderr": subprocess.DEVNULL, "close_fds": True}
+    if os.name != "nt":
+        subprocess.Popen(cmd, start_new_session=True, **kw)
+        return
+    flags = subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
+    try:  # outlive the hook even when Claude Code closes the job it ran the hook in
+        subprocess.Popen(cmd, creationflags=flags | subprocess.CREATE_BREAKAWAY_FROM_JOB, **kw)
+    except OSError:  # the job does not allow breaking away
+        subprocess.Popen(cmd, creationflags=flags, **kw)
 
 
 def resolve(path: str, session: str) -> Path | None:

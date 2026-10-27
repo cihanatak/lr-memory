@@ -29,13 +29,17 @@ def test_every_hook_runs_the_launcher():
     assert b"\r" not in (PLUGIN / "scripts" / "run.sh").read_bytes()  # sh stops at a CRLF line end
 
 
-def test_the_skill_names_itself_and_its_launcher():
-    text = (PLUGIN / "skills" / "recall" / "SKILL.md").read_text(encoding="utf-8")
-    front = text.split("---")[1]
-    assert re.search(r"^name: recall$", front, re.M)
-    description = re.search(r"^description: (.+)$", front, re.M).group(1)
-    assert 200 < len(description) <= 1024
-    assert 'sh "${CLAUDE_PLUGIN_ROOT}/scripts/run.sh" search' in text
+def test_each_skill_names_itself_and_its_launcher():
+    for name, command in (("recall", "search"), ("sleep", "sleep")):
+        text = (PLUGIN / "skills" / name / "SKILL.md").read_text(encoding="utf-8")
+        front = text.split("---")[1]
+        assert re.search(rf"^name: {name}$", front, re.M)
+        description = re.search(r"^description: (.+)$", front, re.M).group(1)
+        assert 200 < len(description) <= 1024
+        assert f'sh "${{CLAUDE_PLUGIN_ROOT}}/scripts/run.sh" {command}' in text
+    # a pass costs model tokens, so only the user starts it
+    assert re.search(r"^disable-model-invocation: true$", (PLUGIN / "skills" / "sleep" / "SKILL.md").read_text(
+        encoding="utf-8").split("---")[1], re.M)
 
 
 def test_nothing_personal_ships():

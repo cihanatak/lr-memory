@@ -2,12 +2,13 @@
 
 [Türkçe](README.tr.md)
 
-Long Claude Code sessions lose their thread when the conversation is compacted, and every new session knows nothing of the old ones. LR Memory addresses both, locally and without spending model tokens:
+Long Claude Code sessions lose their thread when the conversation is compacted. Every new session knows nothing of the old ones, and a correction you made last week has to be made again. LR Memory addresses all three:
 
 1. **A working note across compaction.** Right before Claude Code compacts a conversation, a hook reads the transcript and keeps what summaries tend to lose: your last messages word for word, the open tasks, the files changed, the commits and the latest test results. Right after, a short note made from them (at most 9,000 characters) goes back into the fresh context, with a pointer to the full record.
 2. **Recall over every past session.** A local search index over all the transcripts Claude Code keeps in `~/.claude/projects`: your messages, Claude's answers, commits, commands, compaction summaries, subagent reports and memory files. The `recall` skill makes Claude search it before redoing or guessing anything that happened earlier, and answer with the date, the session and the commit.
+3. **Sleep: your own words become memory.** Once a day if you turn it on, or whenever you run `/lr-memory:sleep`, a pass reads what you said in each project since the last pass. The standing rules and corrections you gave go into Claude Code's own memory folder, which every later session loads. A lesson inferred from what happened waits until a later pass backs it with new evidence.
 
-No server, no network, no model calls: two Python scripts using only the standard library, three hooks and one skill.
+The note and the search need no server, no network and no model calls. Sleep is the one part that calls the model: once per project with new messages, and only when you run it or turn it on. It is all Python's standard library, three hooks and two skills.
 
 ## Install
 
@@ -24,6 +25,7 @@ Then restart Claude Code, since hooks are loaded when it starts.
 - Claude Code. Tested with 2.1.235 and 2.1.308.
 - Python 3.9 or newer on `PATH` as `python3`, `python` or `py`.
 - `sh`, which macOS and Linux have. On Windows, Claude Code runs hooks with Git Bash, which provides it.
+- For sleep, the `claude` command on `PATH`, signed in from a terminal: run `claude`, then `/login`. Sleep starts its own `claude` and cannot borrow the login of the session it runs from, because Claude Code keeps that login out of the shell it gives to tools and hooks. If you use Claude Code only inside the Claude desktop app, sign in this way once.
 
 ## Use
 
@@ -42,6 +44,11 @@ Then restart Claude Code, since hooks are loaded when it starts.
   ```
 
   Narrow a search with `--kind user,commit`, `--since 2026-10-20`, `--session 3f2a9c1e` or `-k 5`.
+- **Sleep** runs when you ask for it:
+  - `/lr-memory:sleep` runs a pass now. It reports what was written, what waits and what was rejected, with the cost in tokens.
+  - `/lr-memory:sleep --dry-run` shows the same and writes nothing.
+  - To have it run once a day on its own, set `LR_MEMORY_SLEEP` to `daily`. The first session start after 20 hours then runs a pass in the background.
+  - Every report is kept in `~/.claude/lr-memory/sleep/reports/`.
 
 ## How it works
 
@@ -52,6 +59,7 @@ flowchart LR
   R -->|"SessionStart (compact) hook"| N["Working note in<br/>the fresh context"]
   T -->|"indexed incrementally"| I[("SQLite FTS5 index")]
   I -->|"recall skill"| A["Answer with date,<br/>session and commit"]
+  T -->|"sleep, once a day"| M[("Claude Code's memory folder:<br/>MEMORY.md and one file per rule")]
 ```
 
 **Design choices:**
@@ -64,6 +72,17 @@ flowchart LR
   - A search leaves out what the current session said since its last compaction: that is in context already, and the question just asked would otherwise come back as the top hit.
   - At session start, the index is brought up to date in the background.
 - **Keys stay out.** Key-shaped strings (Anthropic, OpenAI, GitHub, AWS, Google, Slack, Hugging Face, private keys) are masked before they enter the index. A search can never print one.
+- **Sleep writes only what the record backs.**
+  - Every proposal must quote you word for word or cite a commit from these sessions. A quote that is not in the message it names is dropped, and so is anything that looks like a key or a password.
+  - A standing rule, preference or prohibition you stated in so many words is written the same day.
+  - A lesson inferred from what happened waits as a candidate, which no session sees, until a later pass backs it with evidence it did not have. One not backed again within 14 days fades, and one that later evidence contradicts is withdrawn. Replay can strengthen a wrong generalisation as readily as a right one: in LR, one misread measurement once became a rule sixty times off.
+  - An update appends under a dated heading and never rewrites. A rule is retired only on your own words, into `memory/_retired/`. Every file is backed up before it changes.
+  - When you had to repeat something an existing rule already says, the report names that rule: it did not hold.
+  - Pasted text is not your words, so it is left out.
+- **Sleep stays out of the way.**
+  - The `claude -p` it starts runs in an empty folder, with no tools, no MCP servers, no hooks and no session record.
+  - It skips a project while a session is writing its `MEMORY.md`, or while Claude Code's own memory consolidation runs there.
+  - It follows Claude Code's `autoMemoryEnabled` and `autoMemoryDirectory` settings.
 
 ## Measured on the author's machine
 
@@ -72,6 +91,9 @@ flowchart LR
 - **Token load:** one day of long sessions read 586 million tokens over 1,108 model calls, with a median of 543,000 tokens per call. Every turn re-reads the whole context, so long contexts cost on every turn.
   - Lowering Claude Code's compaction window (`"autoCompactWindow": 400000` in `settings.json`) makes each turn cheaper.
   - Compactions then come more often, and the working note is what makes that safe.
+- **Sleep:**
+  - A pass over a project with six messages and one commit took 9 seconds and 3,631 tokens on Sonnet 5.5. It made three changes, each backed by a quote: two new rules, and an addition to the rule the user had to repeat, which the report named.
+  - On the author's own machine, a first pass would read 38 messages out of the day's 979 MB of transcripts, which takes 2.5 seconds. Its prompt would come to about 26,000 tokens, most of them the one-line descriptions of the 410 memory files already there.
 
 ## Configuration
 
@@ -82,14 +104,17 @@ Set these as environment variables, for example under `"env"` in `~/.claude/sett
 | `LR_MEMORY_LANG` | auto | `en` or `tr`. Auto writes Turkish when your messages read as Turkish. |
 | `LR_MEMORY_DATA` | `~/.claude/lr-memory` | Where the index and the trails are kept. |
 | `LR_MEMORY_TRANSCRIPTS` | `~/.claude/projects` | Where the transcripts are read from. |
+| `LR_MEMORY_SLEEP` | off | `daily` runs a sleep pass at the first session start after 20 hours. |
+| `LR_MEMORY_SLEEP_MODEL` | your default | The model for sleep, such as `sonnet` or `opus`. |
+| `LR_MEMORY_CLAUDE` | `claude` on `PATH` | The `claude` command sleep runs. |
 
 `CLAUDE_CONFIG_DIR` is respected when set.
 
 ## Privacy and removal
 
-Everything stays on your machine. The index holds text from your own transcripts, with keys masked.
+The note and the index stay on your machine. The index holds text from your own transcripts, with keys masked. Sleep sends the messages it reads, keys masked, to the model through your own Claude Code login, as any session does.
 
-To remove LR Memory, run `/plugin uninstall lr-memory@living-runtime`, then delete `~/.claude/lr-memory`.
+To remove LR Memory, run `/plugin uninstall lr-memory@living-runtime`, then delete `~/.claude/lr-memory`. That folder holds the index, the trails and sleep's reports, candidates and backups. The memory files sleep wrote stay in Claude Code's memory folder, where you can edit or delete them like any other.
 
 ## Develop
 
@@ -101,7 +126,6 @@ The tests use temporary folders only. They never read your real `~/.claude`, sta
 
 ## Roadmap
 
-- **Sleep (next):** a nightly pass that turns the day's corrections into memory rules. A lesson drawn from an incident first waits as a candidate, and becomes a rule only when a later night supports it again.
 - **COL:** a separate plugin for checking claims against tool output, a prediction ledger for long jobs, and a secret scan before `git commit` and `git push`.
 
 LR Memory is cut out of LR (Living Runtime), the author's agent runtime, where it has run since October 2026.
