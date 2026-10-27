@@ -212,6 +212,12 @@ def _save(path: Path, data) -> None:
     path.write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
 
 
+def _write(path, text: str) -> None:
+    """Text with LF line ends on every system; Path.write_text takes newline= only from Python 3.10."""
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
+        f.write(text)
+
+
 def _at(stamp) -> datetime | None:
     try:
         t = datetime.fromisoformat(str(stamp or "").replace("Z", "+00:00"))
@@ -404,10 +410,9 @@ def apply(p: dict, memdir: Path, backup: Path, today: str, lang: str) -> None:
     lines = index.read_text(encoding="utf-8").splitlines(keepends=True) if index.exists() else []
     if p["action"] == "add":
         desc = re.sub(r"\s+", " ", str(p.get("description") or p.get("title") or "")).replace('"', "'").strip()
-        target.write_text(f"---\nname: {target.stem}\ndescription: \"{desc}\"\nmetadata:\n  type: {p['type']}\n"
-                          f"  basis: {p.get('basis')}\n  scope: {p.get('scope') or 'general'}\n"
-                          f"  source: lr-memory sleep {today}\n---\n\n{str(p['body']).strip()}\n",
-                          encoding="utf-8", newline="\n")
+        _write(target, f"---\nname: {target.stem}\ndescription: \"{desc}\"\nmetadata:\n  type: {p['type']}\n"
+                       f"  basis: {p.get('basis')}\n  scope: {p.get('scope') or 'general'}\n"
+                       f"  source: lr-memory sleep {today}\n---\n\n{str(p['body']).strip()}\n")
         if lines and not lines[-1].endswith("\n"):
             lines[-1] += "\n"
         header = "## " + p["type"]
@@ -420,7 +425,7 @@ def apply(p: dict, memdir: Path, backup: Path, today: str, lang: str) -> None:
                 lines += (["\n"] if lines[-1].strip() else []) + [f"## {p['type'].capitalize()}\n"]
             at = len(lines)
         lines.insert(at, p["index_line"].strip() + "\n")
-        index.write_text("".join(lines), encoding="utf-8", newline="\n")
+        _write(index, "".join(lines))
     elif p["action"] == "update":
         gap = "\n" if target.read_text(encoding="utf-8", errors="replace").endswith("\n") else "\n\n"
         with target.open("a", encoding="utf-8", newline="\n") as f:
@@ -429,8 +434,7 @@ def apply(p: dict, memdir: Path, backup: Path, today: str, lang: str) -> None:
         (memdir / "_retired").mkdir(exist_ok=True)
         shutil.move(str(target), str(memdir / "_retired" / target.name))
         if lines:
-            index.write_text("".join(ln for ln in lines if f"]({target.name})" not in ln), encoding="utf-8",
-                             newline="\n")
+            _write(index, "".join(ln for ln in lines if f"]({target.name})" not in ln))
 
 
 def _evidence(p: dict) -> set:
@@ -561,7 +565,7 @@ def run(hours: float | None = None, dry_run: bool = False, only: str = "", now: 
     lang = common.lang(" ".join(m["text"] for x in found.values() for m in x["messages"][-30:]))
     _save(d / "reports" / f"{stamp}.json", record)
     record["text"] = report(record, lang)
-    Path(record["report"]).write_text(record["text"], encoding="utf-8", newline="\n")
+    _write(record["report"], record["text"])
     return record
 
 

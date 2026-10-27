@@ -19,9 +19,10 @@ from pathlib import Path
 # git ids; one counts only when it holds a digit and a letter and sits near the word commit
 HEX = re.compile(r"(?<![\w#/.-])([0-9a-f]{7,40})(?![\w-])")
 # an absolute path cited in backticks: a drive (C:\ or D:/), the home folder (~/), a Git Bash drive (/c/) or a Unix
-# folder that holds files; "/api/v1/health" and slash commands are not paths
-CODE_PATH = re.compile(r"`((?:[A-Za-z]:[\\/]|~[\\/]|/(?:home|Users|tmp|var|opt|etc|usr|srv|mnt|workspace|[A-Za-z])/)"
-                       r"[^`<>|*?\n]+)`")
+# folder that holds files, macOS's /private (its temp folders), /Volumes and /Library among them; "/api/v1/health"
+# and slash commands are not paths
+CODE_PATH = re.compile(r"`((?:[A-Za-z]:[\\/]|~[\\/]|/(?:home|Users|tmp|var|opt|etc|usr|srv|mnt|workspace|root|private|"
+                       r"Volumes|Library|Applications|[A-Za-z])/)[^`<>|*?\n]+)`")
 MD_LINK = re.compile(r"\]\(<?([^)\s>]+)>?\)")
 GONE_AFTER = re.compile(r"\b(?:yok|silindi|silinmiş|kaldırıldı|bulunamadı|bulunmuyor|oluşmadı|yazılmadı|olmayan|"
                         r"değil|not found|missing|deleted|removed|no longer|does not exist|doesn't exist|was moved|"

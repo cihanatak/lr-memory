@@ -20,6 +20,13 @@ def test_real_evidence_passes_and_invented_evidence_is_named(repo, tmp_path):
     assert any(kind == "path" and what.endswith("gone.md") for kind, what in found)
 
 
+def test_a_macos_path_is_a_path():
+    """macOS keeps temporary files under /private/var and other disks under /Volumes: an invented file there counts."""
+    for p in ("/private/var/folders/x/T/report.md", "/Volumes/Data/notes.md", "/Library/Logs/build.log"):
+        assert claims.CODE_PATH.search(f"`{p}` is written").group(1) == p
+    assert claims.CODE_PATH.search("call `/api/v1/health` to check") is None
+
+
 def test_turkish_claims_are_read_too(repo):
     r, h, _ = repo
     found = claims.check("Tamam. commit 9a8b7c6 yapıldı ve 7 test geçti.", turn(BASH), "3 passed", str(r))
