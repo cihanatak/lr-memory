@@ -36,6 +36,16 @@ TEXT = {
                          "and try again. If you are sure it is a false alarm, ask the user; if they agree, add the "
                          "fingerprint as a line to {allow}."),
         "mask": "{head}… ({n} characters)",
+        "inq_same": "COL: `{check}` failed again the same way after your edit ({failure}). The edit changed "
+                    "nothing the check sees.",
+        "inq_again": "COL: `{check}` still fails after {n} edits meant to fix it.",
+        "inq_ask": ("Before the next edit, name two explanations that both fit what you see. Make one of them that "
+                    "the cause is outside the code you edited: a stale copy or cache, the environment or a config "
+                    "file, another definition or file being run, or a wrong test. Say what each one predicts for a "
+                    "single cheap command that runs the way the check runs (the same runner, folder and "
+                    "environment), run that command, and fix what it points to."),
+        "inq_loosen": ("COL: this edit adds {what} to a test while `{check}` fails for a reason not yet shown. If the "
+                       "test is wrong, say why; if not, fix the code instead."),
         "kinds": {"anthropic": "Anthropic key", "openai": "OpenAI key", "github": "GitHub token",
                   "gitlab": "GitLab token", "aws": "AWS access key", "google": "Google API key",
                   "slack": "Slack token", "stripe": "Stripe live key", "huggingface": "Hugging Face token",
@@ -58,6 +68,9 @@ TEXT = {
         "r_hyp": "  Hypotheses: {tested} tested, {out} ruled out.",
         "r_gate": "  Launches stopped for a missing prediction: {gate}.",
         "r_secrets": "Key scan: {n} commits or pushes stopped ({kinds}).",
+        "r_inquiry": ("Fixes that did not hold, where COL asked for rival explanations: {nudges}; {passed} of those "
+                      "checks passed later, a median of {edits} edits after the question."),
+        "r_inquiry_more": "  Tests made quiet while failing: {loosen}. Checks that passed with no edit: {quiet}.",
         "r_data": "Logs: {path}",
     },
     "tr": {
@@ -94,6 +107,16 @@ TEXT = {
                          "yeniden dene. Yanlış alarm olduğundan eminsen kullanıcıya sor; onaylarsa parmak izini "
                          "{allow} dosyasına bir satır olarak ekle."),
         "mask": "{head}… ({n} karakter)",
+        "inq_same": "COL: `{check}` düzenlemenden sonra yine aynı şekilde düştü ({failure}). Düzenleme, kontrolün "
+                    "gördüğü hiçbir şeyi değiştirmedi.",
+        "inq_again": "COL: `{check}`, düzeltmek için yapılan {n} düzenlemeden sonra hâlâ düşüyor.",
+        "inq_ask": ("Bir sonraki düzenlemeden önce gördüğüne uyan iki açıklama yaz. Biri, sebebin düzenlediğin "
+                    "kodun dışında olduğu olsun: eski bir kopya ya da önbellek, ortam ya da ayar dosyası, çalışan "
+                    "başka bir tanım ya da dosya, ya da yanlış bir test. Her birinin, kontrolün koştuğu yolla (aynı "
+                    "araç, klasör ve ortamla) çalışan tek bir ucuz komut için ne öngördüğünü söyle, o komutu "
+                    "çalıştır ve gösterdiği yeri düzelt."),
+        "inq_loosen": ("COL: `{check}` henüz gösterilmemiş bir sebeple düşerken bu düzenleme bir teste {what} "
+                       "ekliyor. Test yanlışsa nedenini söyle; değilse kodu düzelt."),
         "kinds": {"anthropic": "Anthropic anahtarı", "openai": "OpenAI anahtarı", "github": "GitHub tokenı",
                   "gitlab": "GitLab tokenı", "aws": "AWS erişim anahtarı", "google": "Google API anahtarı",
                   "slack": "Slack tokenı", "stripe": "Stripe canlı anahtarı", "huggingface": "Hugging Face tokenı",
@@ -118,6 +141,9 @@ TEXT = {
         "r_hyp": "  Hipotezler: {tested} denendi, {out} elendi.",
         "r_gate": "  Öngörüsüz başlatılmak istenip durdurulan iş: {gate}.",
         "r_secrets": "Anahtar taraması: {n} commit ya da push durduruldu ({kinds}).",
+        "r_inquiry": ("COL'un rakip açıklama istediği tutmayan düzeltme: {nudges}; bu kontrollerin {passed} tanesi "
+                      "sonra geçti, sorudan ortanca {edits} düzenleme sonra."),
+        "r_inquiry_more": ("  Düşerken susturulan test: {loosen}. Düzenleme olmadan geçen kontrol: {quiet}."),
         "r_data": "Kayıtlar: {path}",
     },
 }

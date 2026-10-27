@@ -130,10 +130,11 @@ Testler yalnız geçici klasörler kullanır. Gerçek `~/.claude`'u hiç okumaz,
 
 ## COL, buradaki öbür eklenti
 
-Bu pazaryerinde LR Memory'den bağımsız ikinci bir eklenti var. **COL** üç iş yapar:
+Bu pazaryerinde LR Memory'den bağımsız ikinci bir eklenti var. **COL** dört iş yapar:
 - Claude'un son mesajını gerçekten çalışanla karşılaştırır: andığı commit var olmalı, verdiği dosya diskte olmalı, söylediği test sayısı gerçek test çıktısında geçmeli.
 - Uzun işlerden ve geri alınamayan adımlardan önce ölçülebilir öngörülerden bir defter tutar ve onları sonuçlarla karşılaştırır.
 - Bir anahtar taşıyacak commit'i ya da push'u durdurur.
+- Bir kontrol, bir düzenlemeden sonra yine aynı şekilde düşerse iki rakip açıklama ve onları ayırt eden tek bir komut ister. Ölçülen etkisi [deney düzeninde](bench/README.md); etki küçük.
 
 Yereldir, hiç model çağırmaz.
 

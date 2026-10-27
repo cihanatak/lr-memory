@@ -26,7 +26,7 @@ def col_data(tmp_path, monkeypatch):
                         ("COL_LANG", "en"), ("PYTHONIOENCODING", "utf-8"),
                         ("GIT_CONFIG_GLOBAL", tmp_path / "gitconfig")):
         monkeypatch.setenv(name, str(value))
-    for name in ("COL_CLAIMS", "COL_PREDICT", "COL_SECRETS", "COL_REPOS"):
+    for name in ("COL_CLAIMS", "COL_PREDICT", "COL_SECRETS", "COL_REPOS", "COL_INQUIRY"):
         monkeypatch.delenv(name, raising=False)
     return data
 

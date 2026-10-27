@@ -1,8 +1,8 @@
 {
   "name": "col",
   "displayName": "COL",
-  "version": "0.1.0",
-  "description": "Checks what Claude says against what actually ran: a commit it names must exist, a file it cites must be on disk, a test count must appear in real test output. Keeps a ledger of measurable predictions before long jobs and irreversible steps and compares them with the results, and stops a commit or a push that would carry a key. Local; no model calls.",
+  "version": "0.2.0",
+  "description": "Checks what Claude says against what actually ran: a commit it names must exist, a file it cites must be on disk, a test count must appear in real test output. Keeps a ledger of measurable predictions before long jobs and irreversible steps and compares them with the results, stops a commit or a push that would carry a key, and when a fix does not hold (the same check fails the same way after an edit) asks for rival explanations and one command that tells them apart. Local; no model calls.",
   "author": {
     "name": "Cihan Atak",
     "url": "https://github.com/cihanatak"
@@ -11,5 +11,5 @@
   "repository": "https://github.com/cihanatak/lr-memory",
   "license": "MIT",
   "keywords": ["verification", "honesty", "claims", "evidence", "predictions", "calibration", "secrets", "git",
-               "hooks"]
+               "debugging", "root-cause", "hooks"]
 }

@@ -21,12 +21,16 @@ def test_the_manifests_agree():
 
 def test_every_hook_runs_the_launcher():
     hooks = _json(COL / "hooks" / "hooks.json")["hooks"]
-    assert set(hooks) == {"SessionStart", "UserPromptSubmit", "PreToolUse", "Stop"}
+    assert set(hooks) == {"SessionStart", "UserPromptSubmit", "PreToolUse", "PostToolUse", "PostToolUseFailure", "Stop"}
     for groups in hooks.values():
         for group in groups:
             for h in group["hooks"]:
                 assert h["type"] == "command" and h["command"] == 'sh "${CLAUDE_PLUGIN_ROOT}/scripts/run.sh" hook'
     assert [g.get("matcher") for g in hooks["PreToolUse"]] == ["Bash|PowerShell"]
+    assert [g.get("matcher") for g in hooks["PostToolUseFailure"]] == ["Bash|PowerShell"]
+    # the reflex counts edits, so every tool that edits a file reaches it
+    assert set(hooks["PostToolUse"][0]["matcher"].split("|")) == {"Bash", "PowerShell", "Edit", "Write", "MultiEdit",
+                                                                  "NotebookEdit"}
     assert b"\r" not in (COL / "scripts" / "run.sh").read_bytes()  # sh stops at a CRLF line end
 
 

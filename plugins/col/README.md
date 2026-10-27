@@ -26,8 +26,9 @@ COL brings the outside signal. It checks what can be checked against what ran an
    - A commit is judged on what it will record. That covers the staged diff, the changes `-a` picks up, and the files that a `git add` earlier in the same command is about to stage.
    - A push is judged on the commits that no remote has yet.
    - A hit stops the command. COL names the file, the line, the kind of key and a fingerprint, but never shows the key itself.
+4. **A question when a fix does not hold.** Sometimes a test run, a build or a type check fails, a file is edited, and the check fails again the same way. Then the edit changed nothing the check sees, and the next guess is usually built on the same wrong idea. At that moment COL asks Claude, once for that check, for two explanations that both fit. One of them must put the cause outside the edited code: a stale copy or cache, the environment or a config file, another definition or file being run, or a wrong test. Claude is also asked for one cheap command that tells the two apart. A check that still fails after two edits gets the same question. A test that is skipped or loosened while its check fails gets a one-line note.
 
-All of this is mechanical: four hooks, one skill and Python's standard library. COL makes no model calls. The only tokens it adds are the short rules at session start and the text of a reminder, a block or a refusal.
+All of this is mechanical: six hooks, one skill and Python's standard library. COL makes no model calls. The only tokens it adds are the short rules at session start and the text of a reminder, a block or a refusal.
 
 ## Install
 
@@ -109,6 +110,14 @@ A `Hypothesis [key]: …` names one rival explanation under test. A hypothesis w
   - `kaggle competitions submit`, `kaggle kernels push`, `kaggle datasets create`/`version`.
 
   Text inside a heredoc or a quoted commit message is not a command. Waits, watchers and dev servers run in the background without a prediction, because they have no result to predict.
+- **Fixes that did not hold:**
+  - A check is a run of pytest, unittest, vitest, jest, mocha, tsc, `playwright test`, `node --test`, cargo, go, `npm`/`pnpm`/`yarn` test, build, lint or typecheck, dotnet, mvn, gradle, ruff, mypy, eslint, flake8 or pyright.
+  - A run fails when it exits with an error or its output reports failures, so `| tail` hides nothing.
+  - The failure is named by the failing tests when the runner lists them (pytest's short summary), else by its error lines. So `| tail -3` and `| tail -40` show the same failure.
+  - An edit is an Edit, Write or MultiEdit call, or a shell command that writes a file (`sed -i`, `git checkout`, `> file.py`, …). A rerun with nothing edited is not a fix.
+  - A run of the same tool continues a check when it runs every file or some of the same files. Other tests failing make a check of their own.
+  - A refused or interrupted command is not a failure.
+  - Adding `pytest.mark.skip`, `xfail`, `approx(`, `except Exception`, `# type: ignore`, `@ts-ignore` and the like to a test file while a check fails gets the note.
 - **Keys:** keys from Anthropic, OpenAI, GitHub, GitLab, AWS, Google, Slack, Stripe (live), Hugging Face, npm and Kaggle, plus private key blocks. Files that hold secrets, such as `.env`, `id_rsa`, `*.pem` and `kaggle.json`, are flagged too, but `.env.example` is not. Only added lines count, so a commit that takes a key out goes through.
 
 ## How it works
@@ -125,6 +134,8 @@ flowchart LR
   E["Claude stops"] -->|Stop| L["Results compared<br/>with predictions"]
   E -->|Stop| C{"Claims backed by what<br/>ran and what exists?"}
   C -->|no| Block["Stop blocked,<br/>at most twice a turn"]
+  F["A check runs again<br/>after an edit"] -->|PostToolUse| Q{"The same failure, or<br/>still failing after 2 edits?"}
+  Q -->|yes, once a check| A["Two rival explanations<br/>and one cheap command"]
 ```
 
 **Design choices:**
@@ -151,6 +162,25 @@ flowchart LR
 - **A background job.** A job started without a prediction was refused. Claude read the script and retried with `Prediction [check]: 41 passed (~1 sec)`. When the job finished, COL asked for the result and compared it with `Result [check]: 41 passed`: held, and grounded in the job's own output.
 - **Cost.** The three sessions together cost 175,704 tokens, and 160,439 of them were cache reads.
 
+**The surprise reflex, on a bench of its own.** The [bench](../../bench/README.md) has four small repositories, each with two causes, so the fix the user asks for fails again the same way. It ran with Claude Code 2.1.308 and `claude -p`: three runs per task and arm, 48 runs in all.
+
+| | Haiku, without | Haiku, with | Sonnet, without | Sonnet, with |
+| --- | --- | --- | --- | --- |
+| Solved | 9 of 12 | 11 of 12 | 10 of 12 | 10 of 12 |
+| Symptom patches | 1 | 0 | 0 | 0 |
+| Runs where a fix did not hold | 7 | 8 | 5 | 5 |
+| Runs where two fixes did not hold | 0 | 0 | 0 | 0 |
+| Tool calls after the first fix that did not hold (median) | 6 | 4 | 2 | 3 |
+| Tokens, all 12 runs | 1,155,100 | 1,117,115 | 738,585 | 796,250 |
+
+- None of these differences is beyond chance at this size. For Haiku's solved runs, Fisher's p ≈ 0.6.
+- Once a fix did not hold, both models looked elsewhere on their own. No run in either arm had a second fix that did not hold. That is what the reflex asks for, and the models mostly did it unasked.
+- 7 of the 8 unsolved runs were in `env_override`. Each found both causes and left the deployment's `.env` for the user to change.
+- In every run where the bench's count found a point to ask, the live hook asked: 7 of 7 on Haiku, 5 of 5 on Sonnet.
+- In 30 days of the author's own sessions, 36 of 179 failure chains had a fix that did not hold. The tokens spent after one were 4.1% of all tokens, and the reflex works on that slice only.
+
+So the reflex is cheap and did no harm here, but this bench does not show that it helps. On Sonnet it cost 8% more tokens. `COL_INQUIRY=off` turns it off.
+
 **In LR, the agent runtime COL was cut out of:**
 - **Claim check.** Its first three warnings, on its first day, were all false alarms. Later it read 348 finished turns and flagged 8. Of the blocks whose answers named a verdict, 1 was right and 1 was wrong; 3 answers were unclear. In red-team runs, LR's check caught every planted false claim: 120 of 120 three times, then 21 of 21 and 100 of 100.
 - **Ledger.** It held 100 predictions and 57 results. Of those results, 16 held, 31 missed and 10 could not be compared. 46 of the 57 gave a number that appears in real tool output. 12 launches were stopped until a prediction was written.
@@ -162,6 +192,7 @@ flowchart LR
 - **A model as judge.** LR asked a model whether each request had been met. The judge was right on 2 of its first 8 stops. Its 6 wrong stops made long sessions re-read their context: about 17 million tokens in two days, mostly cache reads.
 - **A gate the model fills in for itself.** A self-reported "did you check?" step was skipped 10,420 times.
 - **A ritual skill.** A skill that told the model to imagine failures and write predictions changed no behaviour against a baseline without the skill, across 4 scenarios. It cost 46–74% more tokens.
+- **A debugging skill the model has to call.** LR's skill for rival explanations was called once between June and October. The reflex now asks at the moment the tool output shows the surprise.
 
 ## Configuration
 
@@ -172,6 +203,7 @@ Set these as environment variables, for example under `"env"` in `~/.claude/sett
 | `COL_CLAIMS` | `on` | `on` blocks a false claim (at most twice a turn), `log` only records it, `off` skips the check. |
 | `COL_PREDICT` | `on` | `off` turns off the prediction gate, the ledger and the reminders. |
 | `COL_SECRETS` | `on` | `off` turns off the key scan. |
+| `COL_INQUIRY` | `on` | `off` turns off the question after a fix that did not hold, and the note on a test made quiet. |
 | `COL_LANG` | auto | `en` or `tr`. Auto follows the language you write in; before your first message, the machine's. |
 | `COL_DATA` | `~/.claude/col` | Where the logs and the ledger are kept. |
 | `COL_TRANSCRIPTS` | `~/.claude/projects` | Where a session's transcript is found when the hook is not given one. |
@@ -189,6 +221,7 @@ Everything stays on your machine, in `~/.claude/col`:
 - `predictions.jsonl`: the ledger.
 - `gate.jsonl`: the refused launches. Command lines are logged with keys masked.
 - `secrets.jsonl`: kind, file, line and fingerprint, never a key.
+- `inquiry.jsonl`: each question asked, each test made quiet, and how the check ended. It keeps the check's tool and files and up to 200 characters of the failing test lines.
 - `errors.log`.
 - `state/`: a small file per session, deleted after 30 days.
 

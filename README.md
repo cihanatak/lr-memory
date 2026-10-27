@@ -130,10 +130,11 @@ The tests use temporary folders only. They never read your real `~/.claude`, sta
 
 ## COL, the other plugin here
 
-This marketplace has a second plugin, independent of LR Memory. **COL** does three things:
+This marketplace has a second plugin, independent of LR Memory. **COL** does four things:
 - It checks Claude's last message against what actually ran: a commit it names must exist, a file it cites must be on disk, and a test count must appear in real test output.
 - It keeps a ledger of measurable predictions before long jobs and steps that cannot be taken back, and compares them with the results.
 - It stops a commit or a push that would carry a key.
+- When a check fails again the same way after an edit, it asks for two rival explanations and one command that tells them apart. [The bench](bench/README.md) has its measured effect, which is small.
 
 It is local and makes no model calls.
 

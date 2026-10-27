@@ -26,8 +26,9 @@ COL o dış işareti getirir. Denetlenebilecek her şeyi, gerçekten çalışan 
    - Bir commit, kaydedeceği şeye göre değerlendirilir. Buna sahnedeki değişiklikler, `-a`'nın alacağı değişiklikler ve aynı komutta daha önce gelen bir `git add`'in sahneye koymak üzere olduğu dosyalar girer.
    - Bir push, henüz hiçbir uzak depoda olmayan commit'lere göre değerlendirilir.
    - Bir anahtar bulunursa komut durur. COL dosyayı, satırı, anahtarın türünü ve bir parmak izini söyler; anahtarın kendisini asla göstermez.
+4. **Bir düzeltme tutmayınca bir soru.** Bazen bir test koşusu, bir derleme ya da bir tip denetimi düşer, bir dosya düzenlenir ve kontrol yine aynı şekilde düşer. O zaman düzenleme, kontrolün gördüğü hiçbir şeyi değiştirmemiştir; bir sonraki tahmin de çoğu kez aynı yanlış fikre dayanır. COL tam o anda, o kontrol için bir kez, Claude'dan gördüğüne uyan iki açıklama ister. Biri sebebi düzenlenen kodun dışına koymalıdır: eski bir kopya ya da önbellek, ortam ya da ayar dosyası, çalışan başka bir tanım ya da dosya, ya da yanlış bir test. Claude'dan ayrıca ikisini ayırt eden tek bir ucuz komut istenir. İki düzenlemeden sonra hâlâ düşen bir kontrol de aynı soruyu alır. Kontrolü düşerken atlanan ya da gevşetilen bir test tek satırlık bir not alır.
 
-Bunların hepsi mekaniktir: dört kanca, bir beceri ve Python'un standart kütüphanesi. COL hiç model çağırmaz. Eklediği tek token, oturum başındaki kısa kurallar ile bir hatırlatmanın, engellemenin ya da reddin metnidir.
+Bunların hepsi mekaniktir: altı kanca, bir beceri ve Python'un standart kütüphanesi. COL hiç model çağırmaz. Eklediği tek token, oturum başındaki kısa kurallar ile bir hatırlatmanın, engellemenin ya da reddin metnidir.
 
 ## Kurulum
 
@@ -111,6 +112,14 @@ Sonuç [testler]: 41 geçti, 0 düştü, 2,1 dk sürdü
   - `kaggle competitions submit`, `kaggle kernels push`, `kaggle datasets create`/`version`.
 
   Bir heredoc'un ya da tırnak içindeki bir commit mesajının metni komut sayılmaz. Bekleme döngüleri, izleyiciler ve geliştirme sunucuları arka planda öngörüsüz çalışabilir, çünkü öngörülecek bir sonuçları yoktur.
+- **Tutmayan düzeltmeler:**
+  - Kontrol, şunlardan birinin koşusudur: pytest, unittest, vitest, jest, mocha, tsc, `playwright test`, `node --test`, cargo, go, `npm`/`pnpm`/`yarn` test, build, lint ya da typecheck, dotnet, mvn, gradle, ruff, mypy, eslint, flake8 ya da pyright.
+  - Bir koşu hatayla çıkarsa ya da çıktısı düşen test bildirirse düşmüş sayılır; yani `| tail` hiçbir şeyi gizlemez.
+  - Düşüş, koşucu düşen testleri listeliyorsa onlarla (pytest'in kısa özeti), yoksa hata satırlarıyla adlandırılır. Bu yüzden `| tail -3` ile `| tail -40` aynı düşüşü gösterir.
+  - Düzenleme, bir Edit, Write ya da MultiEdit çağrısı ya da dosya yazan bir kabuk komutudur (`sed -i`, `git checkout`, `> dosya.py`, …). Hiçbir şey düzenlenmeden yapılan yeniden koşu düzeltme sayılmaz.
+  - Aynı aracın bir koşusu, bütün dosyaları ya da aynı dosyaların bir kısmını koşuyorsa bir kontrolü sürdürür. Başka testlerin düşmesi kendi başına bir kontrol açar.
+  - Reddedilen ya da yarıda kesilen bir komut düşüş sayılmaz.
+  - Bir kontrol düşerken bir test dosyasına `pytest.mark.skip`, `xfail`, `approx(`, `except Exception`, `# type: ignore`, `@ts-ignore` ve benzerlerini eklemek notu alır.
 - **Anahtarlar:** Anthropic, OpenAI, GitHub, GitLab, AWS, Google, Slack, Stripe (canlı), Hugging Face, npm ve Kaggle anahtarları, ayrıca özel anahtar blokları. `.env`, `id_rsa`, `*.pem` ve `kaggle.json` gibi gizli bilgi tutan dosyalar da işaretlenir, ama `.env.example` işaretlenmez. Yalnız eklenen satırlar sayılır, yani bir anahtarı dosyadan çıkaran commit geçer.
 
 ## Nasıl çalışır
@@ -127,6 +136,8 @@ flowchart LR
   E["Claude durur"] -->|Stop| L["Sonuçlar öngörülerle<br/>karşılaştırılır"]
   E -->|Stop| C{"İddialar çalışanla ve<br/>diskte olanla destekli mi?"}
   C -->|hayır| Block["Durma engellenir,<br/>turda en çok iki kez"]
+  F["Bir kontrol bir düzenlemeden<br/>sonra yeniden koşar"] -->|PostToolUse| Q{"Aynı düşüş mü, ya da<br/>2 düzenlemeden sonra hâlâ mı?"}
+  Q -->|evet, kontrol başına bir kez| A["İki rakip açıklama<br/>ve tek bir ucuz komut"]
 ```
 
 **Tasarım kararları:**
@@ -153,6 +164,25 @@ flowchart LR
 - **Arka plan işi.** Öngörüsüz başlatılan bir iş reddedildi. Claude betiği okudu ve `Prediction [check]: 41 passed (~1 sec)` ile yeniden denedi. İş bitince COL sonucu sordu ve `Result [check]: 41 passed` ile karşılaştırdı: tuttu, kanıtı da işin kendi çıktısında.
 - **Maliyet.** Üç oturum birlikte 175.704 token tuttu; bunun 160.439'u önbellekten okumaydı.
 
+**Sürpriz refleksi, kendi deney düzeninde.** [Deney düzeninde](../../bench/README.md) dört küçük depo var. Her birinin iki sebebi var, bu yüzden kullanıcının istediği düzeltme yine aynı şekilde düşüyor. Claude Code 2.1.308 ve `claude -p` ile koştu: görev ve kol başına üç koşu, toplam 48 koşu.
+
+| | Haiku, reflekssiz | Haiku, refleksli | Sonnet, reflekssiz | Sonnet, refleksli |
+| --- | --- | --- | --- | --- |
+| Çözülen | 12'de 9 | 12'de 11 | 12'de 10 | 12'de 10 |
+| Belirtiyi örten yama | 1 | 0 | 0 | 0 |
+| Bir düzeltmenin tutmadığı koşu | 7 | 8 | 5 | 5 |
+| İki düzeltmenin tutmadığı koşu | 0 | 0 | 0 | 0 |
+| Tutmayan ilk düzeltmeden sonraki araç çağrısı (ortanca) | 6 | 4 | 2 | 3 |
+| Token, 12 koşunun toplamı | 1.155.100 | 1.117.115 | 738.585 | 796.250 |
+
+- Bu boyutta farkların hiçbiri şans sınırını aşmıyor. Haiku'nun çözülen koşularında Fisher p ≈ 0,6.
+- Bir düzeltme tutmayınca iki model de kendiliğinden başka yere baktı. İki kolda da ikinci bir tutmayan düzeltme olmadı. Refleksin istediği bu; modeller çoğu kez istenmeden yaptı.
+- Çözülmeyen 8 koşunun 7'si `env_override` görevindeydi. Her biri iki sebebi de buldu ve dağıtımın `.env` dosyasını değiştirmeyi kullanıcıya bıraktı.
+- Deney düzeninin kendi sayımının soru yeri bulduğu her koşuda canlı kanca da sordu: Haiku'da 7'de 7, Sonnet'te 5'te 5.
+- Yazarın kendi oturumlarının 30 gününde 179 düşüş zincirinin 36'sında tutmayan bir düzeltme vardı. Bir düzeltme tutmadıktan sonra harcanan token, bütün tokenların %4,1'iydi; refleks yalnız bu dilime dokunur.
+
+Yani refleks ucuz ve burada zarar vermedi, ama bu deney düzeni işe yaradığını göstermiyor. Sonnet'te %8 daha fazla token harcadı. `COL_INQUIRY=off` onu kapatır.
+
 **COL'un ayrıldığı ajan çalışma ortamı LR'de:**
 - **İddia kontrolü.** İlk gününde verdiği ilk üç uyarının üçü de yanlış alarmdı. Sonra 348 biten turu okudu ve 8'inde sorun buldu. Cevabı bir yargı bildiren engellemelerden 1'i doğru, 1'i yanlış çıktı; 3 cevap belirsizdi. Kırmızı takım denemelerinde LR'nin kontrolü konan her sahte iddiayı yakaladı: üç kez 120'de 120, sonra 21'de 21 ve 100'de 100.
 - **Defter.** 100 öngörü ve 57 sonuç tuttu. Sonuçlardan 16'sı tuttu, 31'i tutmadı, 10'u karşılaştırılamadı. 57 sonucun 46'sı gerçek araç çıktısında geçen bir sayı verdi. 12 başlatma, öngörü yazılana kadar durduruldu.
@@ -164,6 +194,7 @@ flowchart LR
 - **Hakem olarak model.** LR, her isteğin karşılanıp karşılanmadığını bir modele sordu. Hakem ilk 8 durdurmasının 2'sinde haklıydı. 6 yanlış durdurması uzun oturumlara bağlamlarını yeniden okuttu: iki günde yaklaşık 17 milyon token, çoğu önbellekten okuma.
 - **Modelin kendi doldurduğu kapı.** Modelin kendisinin işaretlediği "kontrol ettin mi?" adımı 10.420 kez atlandı.
 - **Ritüel beceri.** Modele başarısızlıkları hayal etmesini ve öngörü yazmasını söyleyen bir beceri, 4 senaryoda becerisiz tabana göre hiçbir davranışı değiştirmedi. %46–74 daha fazla token harcadı.
+- **Modelin çağırması gereken bir hata ayıklama becerisi.** LR'nin rakip açıklama becerisi Haziran'la Ekim arasında bir kez çağrıldı. Refleks artık araç çıktısı sürprizi gösterdiği anda soruyor.
 
 ## Ayarlar
 
@@ -174,6 +205,7 @@ Bunları ortam değişkeni olarak verin, örneğin `~/.claude/settings.json` iç
 | `COL_CLAIMS` | `on` | `on` yanlış iddiayı engeller (turda en çok iki kez), `log` yalnız kaydeder, `off` kontrolü atlar. |
 | `COL_PREDICT` | `on` | `off` öngörü kapısını, defteri ve hatırlatmaları kapatır. |
 | `COL_SECRETS` | `on` | `off` anahtar taramasını kapatır. |
+| `COL_INQUIRY` | `on` | `off`, tutmayan bir düzeltmeden sonraki soruyu ve susturulan test notunu kapatır. |
 | `COL_LANG` | otomatik | `en` ya da `tr`. Otomatik, yazdığınız dili izler; ilk mesajınızdan önce makinenin dilini. |
 | `COL_DATA` | `~/.claude/col` | Kayıtların ve defterin tutulduğu yer. |
 | `COL_TRANSCRIPTS` | `~/.claude/projects` | Kancaya verilmediğinde oturum kaydının arandığı yer. |
@@ -191,6 +223,7 @@ Her şey makinenizde, `~/.claude/col` içinde kalır:
 - `predictions.jsonl`: defter.
 - `gate.jsonl`: reddedilen başlatmalar. Komut satırları anahtarlar maskelenerek yazılır.
 - `secrets.jsonl`: tür, dosya, satır ve parmak izi; anahtar asla.
+- `inquiry.jsonl`: sorulan her soru, susturulan her test ve kontrolün nasıl bittiği. Kontrolün aracını ve dosyalarını, düşen test satırlarının da en çok 200 karakterini tutar.
 - `errors.log`.
 - `state/`: oturum başına küçük bir dosya, 30 gün sonra silinir.
 

@@ -1,10 +1,10 @@
-"""COL's four hooks: what it does when a session starts, when the user writes, before a shell command and when the
-assistant stops."""
+"""COL's hooks: what it does when a session starts, when the user writes, before a shell command, after a tool call
+and when the assistant stops."""
 from __future__ import annotations
 
 import re
 
-from col import claims, common, keyscan, outcome, predict
+from col import claims, common, inquiry, keyscan, outcome, predict
 from col.text import t
 
 
@@ -111,7 +111,18 @@ def stop(data: dict) -> None:
         common.emit({"decision": "block", "reason": "\n".join(lines)})
 
 
-HANDLERS = {"SessionStart": session_start, "UserPromptSubmit": prompt, "PreToolUse": pre_tool, "Stop": stop}
+def post_tool(data: dict) -> None:
+    """After a tool call, failed or not: a fix that did not hold, or a failing test made quiet, is named at once."""
+    if common.setting("inquiry") == "off":
+        return
+    event = str(data.get("hook_event_name", ""))
+    note = inquiry.after_tool(data, event == "PostToolUseFailure")
+    if note:
+        common.emit({"hookSpecificOutput": {"hookEventName": event, "additionalContext": note}})
+
+
+HANDLERS = {"SessionStart": session_start, "UserPromptSubmit": prompt, "PreToolUse": pre_tool,
+            "PostToolUse": post_tool, "PostToolUseFailure": post_tool, "Stop": stop}
 
 
 def run() -> int:

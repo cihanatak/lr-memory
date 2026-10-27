@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections import Counter
 from datetime import datetime, timedelta, timezone
 
-from col import common, predict
+from col import common, inquiry, predict
 from col.text import name, t
 
 
@@ -21,8 +21,9 @@ def report(days: float = 30, lang: str = "") -> str:
         common.read_log("gate"))
     secrets = recent([r for r in common.read_log("secrets") if r.get("found")])
     ledger = recent(predict.rows())
+    asked = inquiry.summary(recent(common.read_log("inquiry")))
     out = [t(lang, "r_head", days=_days(days)), ""]
-    if not (checks or ledger or gates or secrets):
+    if not (checks or ledger or gates or secrets or any(asked.values())):
         return "\n".join([*out, t(lang, "r_empty", days=_days(days)), "", t(lang, "r_data", path=common.DATA)])
     if checks:
         flagged = [r for r in checks if r.get("problems")]
@@ -67,6 +68,10 @@ def report(days: float = 30, lang: str = "") -> str:
         kinds = Counter(f.get("kind") for r in secrets for f in r.get("found", []))
         named = ", ".join(f"{name(lang, 'kinds', k)} {n}" for k, n in kinds.most_common())
         out.append(t(lang, "r_secrets", n=len(secrets), kinds=named))
+        out.append("")
+    if any(asked.values()):
+        out.append(t(lang, "r_inquiry", nudges=asked["nudges"], passed=asked["passed"], edits=asked["edits"]))
+        out.append(t(lang, "r_inquiry_more", loosen=asked["loosen"], quiet=asked["quiet"]))
         out.append("")
     out.append(t(lang, "r_data", path=common.DATA))
     return "\n".join(out)
