@@ -93,8 +93,9 @@ flowchart LR
 - **Index:** 575 transcripts (6.6 GB) were indexed from scratch in 41 seconds, into 77,471 parts and a 129 MB index. A search then takes about half a second, Python's start-up included.
 - **Search output:** a search prints 0.4–1.2 KB, a few hundred tokens. Grepping the raw `.jsonl` files for the same words printed 0.3–4.5 MB.
 - **Token load:** one day of long sessions read 586 million tokens over 1,108 model calls, with a median of 543,000 tokens per call. Every turn re-reads the whole context, so long contexts cost on every turn.
-  - Lowering Claude Code's compaction window (`"autoCompactWindow": 400000` in `settings.json`) makes each turn cheaper.
-  - Compactions then come more often, and the working note is what makes that safe.
+  - Lowering Claude Code's compaction window (`"autoCompactWindow": 400000` in `settings.json`) makes each turn cheaper. In [the long-session bench](bench/long_session/README.md), a ten-message job on Sonnet 5.5 used 24–27% fewer tokens with a 100k window than with a 1M one. All nine runs passed all 16 checks.
+  - The note made no measurable difference there. Claude Code's own summary was enough for that job, so the bench does not show that the note makes compactions safer.
+  - The search carried the work over to the next day. Fresh sessions were asked three questions each about the earlier session: nine with LR Memory got 27 of 27 right, nine without it got 10. A session cost about 49,000 tokens either way.
 - **Sleep:**
   - A pass over a project with six messages and one commit took 9 seconds and 3,631 tokens on Sonnet 5.5. It made three changes, each backed by a quote: two new rules, and an addition to the rule the user had to repeat, which the report named.
   - On the author's own machine, a first pass would read 38 messages out of the day's 979 MB of transcripts, which takes 2.5 seconds. Its prompt would come to about 26,000 tokens, most of them the one-line descriptions of the 410 memory files already there.

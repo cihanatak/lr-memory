@@ -93,8 +93,9 @@ flowchart LR
 - **Dizin:** 575 kayıt (6,6 GB) sıfırdan 41 saniyede dizinlendi: 77.471 parça, 129 MB'lık bir dizin. Sonrasında bir arama, Python'un açılışı dahil yaklaşık yarım saniye sürüyor.
 - **Arama çıktısı:** bir arama 0,4–1,2 KB yazar, yani birkaç yüz token. Aynı sözcükler için ham `.jsonl` dosyalarında grep 0,3–4,5 MB yazdı.
 - **Token yükü:** uzun oturumlarla geçen bir günde 1.108 model çağrısında 586 milyon token okundu; çağrı başına ortanca 543.000. Her tur bütün bağlamı yeniden okur, bu yüzden uzun bağlam her turda maliyet çıkarır.
-  - Claude Code'un özetleme penceresini düşürmek (`settings.json` içinde `"autoCompactWindow": 400000`) her turu ucuzlatır.
-  - Özetleme o zaman daha sık olur; bunu güvenli kılan da çalışma notudur.
+  - Claude Code'un özetleme penceresini düşürmek (`settings.json` içinde `"autoCompactWindow": 400000`) her turu ucuzlatır. [Uzun oturum deney düzeninde](bench/long_session/README.md) Sonnet 5.5 ile yapılan on mesajlık bir iş, 100k pencereyle 1M pencereye göre %24–27 daha az token harcadı. Dokuz koşunun hepsi 16 kontrolün 16'sını da geçti.
+  - Notun orada ölçülebilir bir etkisi olmadı. O iş için Claude Code'un kendi özeti yetti; yani bu deney, notun özetlemeyi daha güvenli kıldığını göstermiyor.
+  - İşi ertesi güne taşıyan arama oldu. Yeni oturumlara önceki oturumla ilgili üçer soru soruldu: LR Memory'li dokuz oturum 27 sorunun 27'sini, LR Memory'siz dokuz oturum 10'unu doğru cevapladı. Bir oturum iki durumda da yaklaşık 49.000 token tuttu.
 - **Uyku:**
   - Altı mesajlı ve bir commit'li bir projede geçiş Sonnet 5.5 ile 9 saniye sürdü ve 3.631 token harcadı. Her biri bir alıntıya dayanan üç değişiklik yaptı: iki yeni kural ve kullanıcının yeniden söylemek zorunda kaldığı kurala bir ek. Rapor o kuralın adını verdi.
   - Yazarın kendi makinesinde ilk geçiş, günün 979 MB'lık kayıtlarından 38 mesaj okurdu; bu okuma 2,5 saniye sürüyor. İstemi yaklaşık 26.000 token olurdu; bunun çoğu, orada zaten duran 410 hafıza dosyasının tek satırlık açıklamaları.
