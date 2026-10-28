@@ -133,6 +133,26 @@ def test_a_directive_is_written_tonight_with_its_index_line(stores, transcript, 
     assert "Kept one rule." in rec["text"] and "add `feedback-ask-before-push.md`" in rec["text"]
 
 
+def test_a_fact_said_in_passing_is_written_tonight_on_the_users_words(stores, transcript, model):
+    mem = memory(stores)
+    write(transcript, [
+        row("user", "Looks good. By the way, the carrier's API takes at most 60 requests a minute and answers 429 above "
+                    "that; nothing to do about it for now.", at=at(2)),
+        row("user", [{"type": "tool_result", "tool_use_id": "t1", "content": "[main 1a2b3c4] Retry the carrier"}],
+            at=at(1)),
+    ])
+    model.reply({"proposals": [add("project-carrier-limit.md", "fact",
+                                   said("m1", "the carrier's API takes at most 60 requests a minute"), type="project"),
+                               add("project-carrier-retry.md", "fact", [{"kind": "commit", "hash": "1a2b3c4"}])],
+                 "summary": "Kept the carrier's limit."})
+    rec = sleep.run(now=NOW)
+    assert "\n  basis: fact\n" in (mem / "project-carrier-limit.md").read_text(encoding="utf-8")
+    assert "project-carrier-limit.md" in (mem / "MEMORY.md").read_text(encoding="utf-8")
+    assert not rec["projects"][0]["candidates"]  # what the user stated does not wait like an inference
+    assert rec["projects"][0]["rejected"] == [{"action": "add", "file": "project-carrier-retry.md", "reason": "words"}]
+    assert "add `project-carrier-limit.md` project-carrier-limit (fact)" in rec["text"]
+
+
 def test_an_invented_quote_an_unknown_commit_or_a_bad_name_is_rejected(stores, transcript, model):
     write(transcript, [row("user", "Please keep the answers short and plain.", at=at(2))])
     right = said("m1", "keep the answers short and plain")

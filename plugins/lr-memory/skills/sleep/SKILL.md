@@ -1,6 +1,6 @@
 ---
 name: sleep
-description: Run LR Memory's sleep pass now. It reads what the user said in each project since the last pass, writes their standing rules and corrections as memory files that every later session loads, and lets lessons drawn from what happened wait until a later pass backs them with new evidence. It costs model tokens (one claude -p call per project with new messages), so it runs only when the user invokes it.
+description: Run LR Memory's sleep pass now. It reads what the user said in each project since the last pass, writes their standing rules, corrections and the facts they stated as memory files that every later session loads, and lets lessons drawn from what happened wait until a later pass backs them with new evidence. It costs model tokens (one claude -p call per project with new messages), so it runs only when the user invokes it.
 disable-model-invocation: true
 ---
 

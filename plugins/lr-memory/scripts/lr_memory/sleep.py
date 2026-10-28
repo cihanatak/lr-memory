@@ -4,7 +4,8 @@ Claude Code keeps a memory folder per project (~/.claude/projects/<project>/memo
 the index each session reads). A pass reads what the user said in each project since the last pass, asks Claude once
 per project which of it should last, checks every proposal against the record, and writes what holds up there.
 
-- A directive, a standing rule, preference or prohibition the user stated in so many words, is written the same day.
+- What the user stated in so many words is written the same day: a directive (a standing rule, preference or
+  prohibition) or a fact later work will need (a limit, a number, a decision or its reason), even one said in passing.
 - A lesson inferred from what happened waits as a candidate, which no session sees, until a later pass backs it with
   evidence it did not have. One not backed again within two weeks fades; one the evidence contradicts is withdrawn.
   Replay strengthens a wrong generalisation as readily as a right one: in the runtime this was cut from, one misread
@@ -44,6 +45,7 @@ INDEX_LINES, INDEX_BYTES = 200, 25_000  # past these, sessions read only part of
 BUSY_S = 120  # MEMORY.md written this recently: a session is writing memory now
 DREAM_LOCK_S = 3600  # Claude Code's own consolidation (auto-dream) holds .consolidate-lock while it runs
 TYPES = ("user", "feedback", "project", "reference")
+STATED = ("directive", "fact")  # bases written the same day; a lesson waits as a candidate
 NAME = re.compile(r"[a-z0-9][a-z0-9-]*\.md")
 PASSWORD = re.compile(r"\b(?:password|passwd|parola|şifre)\s*[:=]\s*\S+", re.I)
 # what makes a child claude take itself for part of the session that started it
@@ -63,7 +65,7 @@ SCHEMA = {
             "description": {"type": "string"},
             "body": {"type": "string"},
             "index_line": {"type": "string"},
-            "basis": {"enum": ["directive", "lesson"]},
+            "basis": {"enum": ["directive", "fact", "lesson"]},
             "scope": {"type": "string"},
             "repeat_of": {"type": "string"},
             "evidence": {"type": "array", "items": {"type": "object", "properties": {
@@ -95,13 +97,17 @@ did not hold.
 Rules:
 - Evidence is mandatory: copy the user's words exactly (at least 15 characters) with the message id, or cite a
   commit hash from the list. No evidence, no proposal.
-- basis: "directive" when the user states a standing rule, preference or prohibition in so many words (quote it);
-  "lesson" when you infer it from what happened (a correction of one piece of work, a failure, the commits). A
-  directive is written today. A lesson waits as a candidate and becomes a rule only when a later pass backs it: to
-  back a waiting candidate, propose it again with the same file name and evidence from this window. Never back a
-  candidate without new evidence.
+- basis: "directive" when the user states a standing rule, preference or prohibition in so many words; "fact" when
+  they state something about the project or its environment that later work will need, such as a limit, a number, a
+  decision or its reason, even in passing in a message about something else; "lesson" when you infer it from what
+  happened (a correction of one piece of work, a failure, the commits). A directive or a fact quotes the user and is
+  written today. What follows from a fact for the work goes in its How to apply line and does not make it a lesson.
+  A lesson waits as a candidate and becomes a rule only when a later pass backs it: to back a waiting candidate,
+  propose it again with the same file name and evidence from this window. Never back a candidate without new
+  evidence.
 - withdraw: names of waiting candidates that this window's evidence shows to be wrong.
-- One fact per file. Write rules, not diaries: the rule, then a **Why:** line and a **How to apply:** line.
+- One fact per file. Write rules and facts, not diaries: the rule or fact, then a **Why:** line and a **How to
+  apply:** line.
 - type: user (who the user is), feedback (how to work with them), project (this project's goals, decisions and
   constraints), reference (where to find things).
 - file: lowercase words joined by hyphens, ending in .md, e.g. feedback-short-answers.md.
@@ -142,7 +148,7 @@ TEXT = {
            "dropped": "{n} older messages did not fit into one pass and were not read.",
            "written": "Written to memory", "waiting": "Lessons waiting (no session sees them)",
            "rejected": "Rejected", "repeats": "Rules that did not hold (the user had to say it again)",
-           "closed": "Closed candidates", "basis": {"directive": "directive", "lesson": "lesson"},
+           "closed": "Closed candidates", "basis": {"directive": "directive", "fact": "fact", "lesson": "lesson"},
            "state": {"new": "new", "seen": "seen again, no new evidence"}, "nights": "{n} night(s)",
            "withdrawn": "withdrawn", "faded": "faded", "later": "Left for the next pass: {names}",
            "skip": {"off": "Skipped: auto memory is off in Claude Code's settings.",
@@ -169,7 +175,7 @@ TEXT = {
            "dropped": "Bir geçişe sığmayan {n} eski mesaj okunmadı.",
            "written": "Hafızaya yazılanlar", "waiting": "Bekleyen dersler (hiçbir oturum görmez)",
            "rejected": "Reddedilenler", "repeats": "Tutmayan kurallar (kullanıcı yeniden söylemek zorunda kaldı)",
-           "closed": "Kapanan adaylar", "basis": {"directive": "talimat", "lesson": "ders"},
+           "closed": "Kapanan adaylar", "basis": {"directive": "talimat", "fact": "bilgi", "lesson": "ders"},
            "state": {"new": "yeni", "seen": "yine görüldü, yeni kanıt yok"}, "nights": "{n} gece",
            "withdrawn": "geri çekildi", "faded": "söndü", "later": "Sonraki geçişe kalan: {names}",
            "skip": {"off": "Atlandı: Claude Code ayarlarında otomatik hafıza kapalı.",
@@ -386,7 +392,7 @@ def verify(p: dict, msgs: list, commits: dict, memdir: Path) -> str:
         return "exists"
     if action in ("update", "retire") and not exists:
         return f"missing:{action}"
-    if (action == "retire" or p.get("basis") == "directive") and not any(e.get("kind") == "user" for e in ev):
+    if (action == "retire" or p.get("basis") in STATED) and not any(e.get("kind") == "user" for e in ev):
         return "words"
     if action in ("add", "update") and not str(p.get("body") or "").strip():
         return "body"
@@ -495,7 +501,7 @@ def _project(out: dict, found: dict, cands: dict, today: str, dry_run: bool, log
         if reason:
             out["rejected"].append({"action": p.get("action"), "file": p.get("file"), "reason": reason})
             continue
-        if p["action"] != "retire" and p.get("basis") != "directive":
+        if p["action"] != "retire" and p.get("basis") not in STATED:
             state = back(cands, p, today)
             if state != "promoted":
                 out["candidates"].append({"file": p["file"], "state": state, "nights": len(cands[p["file"]]["nights"])})

@@ -104,6 +104,27 @@ def test_the_cue_can_be_turned_off(stores, monkeypatch):
     assert _hook(stores, PROMPT) == ""
 
 
+def test_a_message_comes_back_whole_and_a_long_one_as_the_part_the_prompt_shares(stores):
+    chat = "We also spoke about the office plants and the coffee machine on the third floor, at some length. "
+    write(stores / "proj" / f"{OLD}.jsonl", [
+        row("user", "Run tools/bench.py and tell me the p50: our baseline before the currency work. " + chat * 2 +
+            "Two rules for every session: a line under Unreleased for each change, and no renames in api.py.",
+            "2026-10-27T10:00", origin={"kind": "human"}),
+        row("assistant", [{"type": "text", "text": "Baseline p50 is 25.9 ms."}], "2026-10-27T10:01")])
+    (stores / "long").mkdir()
+    write(stores / "long" / "dddd1111-2222-3333-4444-555566667777.jsonl", [
+        row("user", chat * 12 + "Run tools/bench.py next week and add its p50 next to the baseline.",
+            "2026-10-27T10:00", origin={"kind": "human"}),
+        row("assistant", [{"type": "text", "text": "Noted."}], "2026-10-27T10:01")])
+    for project in ("proj", "long"):
+        cue._index(stores / project)
+    whole, = cue.turns(PROMPT, SID, stores / "proj")
+    part, = cue.turns(PROMPT, SID, stores / "long")
+    assert whole["said"].endswith("no renames in api.py.")  # past the 220 characters the cue once cut at
+    assert part["said"].startswith("…") and part["said"].endswith("add its p50 next to the baseline.")
+    assert len(part["said"]) <= cue.SAID + 1
+
+
 def test_turns_finds_the_same_turns_in_process(stores):
     _yesterday(stores)
     cue._index(stores / "proj")

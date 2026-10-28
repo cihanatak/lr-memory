@@ -155,3 +155,25 @@ What it says:
   chains; in the other two it held back what the user had stated as if it were a guess. That is the next fix, and it
   will need a third job to show.
 - **A known rule is still not kept.** Short answers failed in both jobs and every arm.
+
+## After the run: the sleep pass fixed, on this job's day 1 (29 October 2026)
+
+LR Memory 0.3.1 gives the sleep pass a third basis besides a directive and a lesson: a fact the user stated about the
+project or its environment, such as a limit, a number, or a decision and its reason, even in passing. Like a directive,
+it must quote the user and is written the same day. What follows from it for the work goes in its How to apply line and
+no longer makes it an inference that waits. The fix was designed on this job's record, so this job cannot show that it
+works; [the third job](../shelf/DESIGN.md) is for that.
+
+What it does here, with the sleep pass alone: three passes per chain on each chain's saved day 1, nothing else run
+([sleep_probe.py](../sleep_probe.py)).
+
+| Of 9 passes | 0.3.0 | 0.3.1 |
+| --- | --- | --- |
+| The API's limit written into memory | 5 | 8 |
+| The limit held back as a candidate | 2 | 0 |
+| The fuel surcharge, the fee's reason, written into memory | 4 | 9 |
+| Memory files written per pass, median | 3 | 4 |
+| Tokens, all 9 passes | 45,808 | 56,348 |
+
+`python bench/cross_session/sleep_probe.py --job kargo --results <run folder> --out <folder> --runs 3 --env-module
+<file> --plugins <0.3.0 folder>,<0.3.1 folder>`

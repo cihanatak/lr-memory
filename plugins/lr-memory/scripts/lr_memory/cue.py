@@ -22,7 +22,8 @@ TURNS = 3  # turns per prompt at most
 MIN_TERMS = 3  # query terms a prompt must have, and a turn's best hit must carry
 FLOOR = 0.35  # a turn that scores under this share of the best one stays out
 BUDGET_S = 8.0  # indexing per prompt; a session start indexes the rest in the background
-SAID, ANSWER = 220, 260  # characters of each
+SAID, ANSWER = 600, 260  # characters of each; a longer one shows its part that carries the prompt's words. Five in
+# six of the messages a user typed fit whole in SAID, on the machine this was built on.
 TEXT = {
     "en": {"head": "LR Memory: turns of this project's earlier sessions that this prompt brings back, verbatim. Where "
                    "they disagree with the code or with what the user says now, those win.",
@@ -123,8 +124,8 @@ def turns(prompt: str, session: str, project: Path, skip: set = frozenset()) -> 
             else:
                 answer = archive.snippet(h["text"], pats, ANSWER)
             text = " ".join((said[0] if said else "").split())
-            out.append({"ref": key, "at": h["at"], "said": text[:SAID] + ("…" if len(text) > SAID else ""),
-                        "answer": answer})
+            text = text if len(text) <= SAID else archive.snippet(text, pats, SAID)
+            out.append({"ref": key, "at": h["at"], "said": text, "answer": answer})
         return out
     finally:
         con.close()
