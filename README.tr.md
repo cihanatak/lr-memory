@@ -9,10 +9,11 @@
 Uzun Claude Code oturumları, sohbet özetlenince işin ipini kaybeder. Her yeni oturum eskilerden habersiz başlar ve geçen hafta yaptığın bir düzeltmeyi yeniden yapman gerekir. LR Memory üçünü de çözer:
 
 1. **Özetlemeyi aşan çalışma notu.** Claude Code sohbeti özetlemeden hemen önce bir kanca kaydı okur. Özetlerin en çok kaybettiklerini saklar: son mesajlarının birebir hâli, açık işler, değişen dosyalar, commit'ler ve son test sonuçları. Özetlemeden hemen sonra bunlardan çıkan kısa bir not (en çok 9.000 karakter) tam kayda giden yolla birlikte yeni bağlama geri konur.
-2. **Bütün geçmiş oturumlarda arama.** Claude Code'un `~/.claude/projects` altında tuttuğu bütün kayıtlar için yerel bir arama dizini: senin mesajların, Claude'un cevapları, commit'ler, komutlar, özetler, alt ajan raporları ve hafıza dosyaları. `recall` becerisi, daha önce yapılmış bir şeyi yeniden yapmadan ya da tahmin etmeden önce Claude'a bu dizinde aratır. Cevap tarih, oturum ve commit ile gelir.
-3. **Uyku: kendi sözlerin hafızaya döner.** Açarsan günde bir kez, ya da her `/lr-memory:sleep` çalıştırdığında, bir geçiş her projede son geçişten beri söylediklerini okur. Verdiğin kalıcı kurallar ve düzeltmeler Claude Code'un kendi hafıza klasörüne yazılır; sonraki her oturum onu yükler. Olan bir şeyden çıkarılan ders ise başka bir geçiş onu yeni bir kanıtla destekleyene kadar bekler.
+2. **İpucu: önceki turlar kendiliğinden geri gelir.** Claude isteğini okumadan önce bir kanca, bu projenin önceki oturumlarında isteğin sözcükleriyle arama yapar. Geri getirdiği turlar, her biri senin söylediğin ve verilen cevapla birlikte, birebir Claude'un önüne konur: en çok üç tur, her biri oturum başına bir kez. Geçen hafta verdiğin bir gerekçe ya da Claude'un dün ölçtüğü bir sayı, kimsenin aramayı akıl etmesine gerek kalmadan oradadır.
+3. **Bütün geçmiş oturumlarda arama.** Claude Code'un `~/.claude/projects` altında tuttuğu bütün kayıtlar için yerel bir arama dizini: senin mesajların, Claude'un cevapları, commit'ler, komutlar, özetler, alt ajan raporları ve hafıza dosyaları. `recall` becerisi, daha önce yapılmış bir şeyi yeniden yapmadan ya da tahmin etmeden önce Claude'a bu dizinde aratır. Cevap tarih, oturum ve commit ile gelir.
+4. **Uyku: kendi sözlerin hafızaya döner.** Açarsan günde bir kez, ya da her `/lr-memory:sleep` çalıştırdığında, bir geçiş her projede son geçişten beri söylediklerini okur. Verdiğin kalıcı kurallar ve düzeltmeler Claude Code'un kendi hafıza klasörüne yazılır; sonraki her oturum onu yükler. Olan bir şeyden çıkarılan ders ise başka bir geçiş onu yeni bir kanıtla destekleyene kadar bekler.
 
-Not ve arama için sunucu, ağ ya da model çağrısı gerekmez. Modeli çağıran tek parça uykudur: yeni mesajı olan her proje için bir kez, yalnız sen çalıştırınca ya da açınca. Hepsi Python'un standart kütüphanesi, üç kanca ve iki beceriden oluşur.
+Not, ipucu ve arama için sunucu, ağ ya da model çağrısı gerekmez. Modeli çağıran tek parça uykudur: yeni mesajı olan her proje için bir kez, yalnız sen çalıştırınca ya da açınca. Hepsi Python'un standart kütüphanesi, dört kanca ve iki beceriden oluşur.
 
 ## Kurulum
 
@@ -34,6 +35,7 @@ Ardından Claude Code'u yeniden başlat. Kancalar açılışta yüklenir.
 ## Kullanım
 
 - **Not** senden bir şey istemez. Her özetlemeden sonra kendiliğinden gelir; otomatik özetlemede de `/compact` ile de.
+- **İpucu** da senden bir şey istemez. Aynı projenin önceki bir turuyla en az üç sözcüğü ortak olan bir istek o turu geri getirir; kısa ya da ilgisiz bir istek bir şey getirmez. Bir şey bulduğunda bağlama birkaç yüz token ekler. Kapatmak için `LR_MEMORY_CUE` değişkenini `off` yap.
 - **Hatırlama** için geçmişi kendi sözlerinle sorman yeter:
   - "Geçen sefer giriş yönlendirmesini nasıl düzeltmiştik?"
   - "Önbellek anahtarını hangi commit değiştirdi?"
@@ -62,6 +64,7 @@ flowchart LR
   S["Claude Code'un özeti"] -->|PostCompact kancası| R
   R -->|"SessionStart (compact) kancası"| N["Yeni bağlamda<br/>çalışma notu"]
   T -->|"artımlı dizinleme"| I[("SQLite FTS5 dizini")]
+  I -->|"UserPromptSubmit kancası: ipucu"| C["İsteğin geri getirdiği önceki<br/>turlar, Claude okumadan önce"]
   I -->|"recall becerisi"| A["Tarih, oturum ve<br/>commit ile cevap"]
   T -->|"uyku, günde bir kez"| M[("Claude Code'un hafıza klasörü:<br/>MEMORY.md ve kural başına bir dosya")]
 ```
@@ -69,6 +72,7 @@ flowchart LR
 **Tasarım kararları:**
 - **Birebir, yeniden yazılmış değil.** Özet ana fikri korur. Ama "eski göçe dokunma" gibi bir düzeltme genel bir cümleye döner, dosya ve commit izleri de ilk gidenlerdir. Not bunları kayıttan mekanik olarak alır.
 - **Kaydın kopyası değil, kayda bir dizin.** Kaynak her zaman kayıtların kendisidir. Arama, her biri kaynağıyla birkaç kısa sonuç döndürür; model gerekeni açar.
+- **Aranmadan geri gelir.** Oturumlar arası deney düzeninde recall becerisi 13 oturumda yüklüydü ve hiçbirinde kullanılmadı: neyi kaçırdığını bilmeyen model onu aramaz. İpucu bu aramayı her istekte kendisi yapar, tıpkı bir ipucunun bir anıyı geri getirmesi gibi. Yalnız bu projenin oturumlarında arar. Turları BM25 ile sıralar; böylece isteğin sıradan sözcüklerinden çoğunu paylaşan uzun bir cevap, nadir sözcüklerini paylaşan kısa bir mesajın önüne geçmez. İsteğin sözcüklerinden üçünden azını paylaşan tur dışarıda kalır.
 - **Hafif kök bulmalı düz sözcük araması.** Gömme, vektör deposu ya da sunucu gerekmez. Harfler katlanır (ı→i, ş→s, aksanlar düşer) ve her sorgu sözcüğü ilk beş harfine indirilir. Türkçede bu, tam bir kök bulucu kadar iyi çalışır (Can ve ark., JASIST 2008). Böylece `düzeltmiştik` aranınca `düzeltme` de bulunur; İngilizcede `comparator` aranınca `compare` bulunur. Sözcüğün tamamını taşıyan sonuç, yalnız kesik biçimi taşıyanın önüne geçer. Parçalardan oluşan bir ad (`listed_commits`, `predict.py`) bütün olarak eşleşir.
 - **Asla yol kesmez.**
   - Hata veren bir kanca 0 ile çıkar ve `errors.log`'a yazar; özetlemeyi ya da oturum açılışını hiç durdurmaz.
@@ -90,6 +94,11 @@ flowchart LR
 
 ## Yazarın makinesinde ölçülenler
 
+- **1. gün bir kez söylenen, 2. gün gereken.** [Oturumlar arası deney düzeninde](bench/cross_session/DESIGN.md) 1. gün altı mesajlık bir iştir; 2. gün ise ona dayanan üç görevli yeni bir oturumdur. Bütün kollarda Claude Code'un kendi hafızası açıktı; Sonnet 5.5, beş zincir, her kol için aynı 1. gün.
+  - Tek başına Claude Code kalıcı kuralları korudu. Beş zincirin hepsinde bir vergi oranının neden düzeltildiğini ve kendi ölçtüğü taban değeri kaybetti, ikisini de kullanıcıya sordu.
+  - LR Memory 0.3.0 ile gerekçe beş zincirin hepsinde koda, taban değer de rapora geçti. Yedi hafıza ve kural kontrolünde, tek başına Claude Code'un kaldığı yerde 10 kez geçti, tersi bir kez oldu (işaret testi, p = 0,012). Uyku kapalıyken ipucu tek başına 3 zincirin 3'ünde aynısını yaptı. İpucu ilk zincirin kaydına bakılarak tasarlandı; diğer dördü dışarıda tutuldu.
+  - 2. günün tokenları koşular arasındaki oynamanın içinde kaldı: zincir zincir %28 daha azdan %4 daha fazlaya, ortanca %0.
+  - Çözülmeyen: hiçbir kol, cevaplarının uzunluğundan yakınılmasından sonra kısa yazmadı. İpucu olmayan LR Memory 0.2.0 iki bilgiyi beş zincirin ikişerinde taşıdı.
 - **Dizin:** 575 kayıt (6,6 GB) sıfırdan 41 saniyede dizinlendi: 77.471 parça, 129 MB'lık bir dizin. Sonrasında bir arama, Python'un açılışı dahil yaklaşık yarım saniye sürüyor.
 - **Arama çıktısı:** bir arama 0,4–1,2 KB yazar, yani birkaç yüz token. Aynı sözcükler için ham `.jsonl` dosyalarında grep 0,3–4,5 MB yazdı.
 - **Token yükü:** uzun oturumlarla geçen bir günde 1.108 model çağrısında 586 milyon token okundu; çağrı başına ortanca 543.000. Her tur bütün bağlamı yeniden okur, bu yüzden uzun bağlam her turda maliyet çıkarır.
@@ -109,6 +118,7 @@ Bunlar ortam değişkeni olarak verilir, örneğin `~/.claude/settings.json` iç
 | `LR_MEMORY_LANG` | otomatik | `en` ya da `tr`. Otomatik seçim, mesajların Türkçe görünüyorsa Türkçe yazar. |
 | `LR_MEMORY_DATA` | `~/.claude/lr-memory` | Dizinin ve iz kayıtlarının tutulduğu yer. |
 | `LR_MEMORY_TRANSCRIPTS` | `~/.claude/projects` | Kayıtların okunduğu yer. |
+| `LR_MEMORY_CUE` | açık | `off` ipucunu kapatır. |
 | `LR_MEMORY_SLEEP` | kapalı | `daily`, 20 saatten sonraki ilk oturum açılışında bir uyku geçişi başlatır. |
 | `LR_MEMORY_SLEEP_MODEL` | varsayılan modelin | Uykunun modeli, örneğin `sonnet` ya da `opus`. |
 | `LR_MEMORY_CLAUDE` | `PATH` üzerindeki `claude` | Uykunun çalıştırdığı `claude` komutu. |
@@ -117,7 +127,7 @@ Bunlar ortam değişkeni olarak verilir, örneğin `~/.claude/settings.json` iç
 
 ## Gizlilik ve kaldırma
 
-Not ve dizin senin makinende kalır. Dizin, anahtarları maskelenmiş olarak yalnız senin kayıtlarındaki metni tutar. Uyku, okuduğu mesajları anahtarları maskelenmiş olarak, her oturumun yaptığı gibi kendi Claude Code girişinle modele gönderir.
+Not, ipucu ve dizin senin makinende kalır. Dizin, anahtarları maskelenmiş olarak yalnız senin kayıtlarındaki metni tutar. Uyku, okuduğu mesajları anahtarları maskelenmiş olarak, her oturumun yaptığı gibi kendi Claude Code girişinle modele gönderir.
 
 Kaldırmak için önce `/plugin uninstall lr-memory@living-runtime` çalıştır, ardından `~/.claude/lr-memory` klasörünü sil. Bu klasörde dizin, iz kayıtları ve uykunun raporları, adayları ve yedekleri durur. Uykunun yazdığı hafıza dosyaları Claude Code'un hafıza klasöründe kalır; onları da diğerleri gibi düzenleyebilir ya da silebilirsin.
 
