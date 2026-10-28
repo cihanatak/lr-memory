@@ -1,6 +1,7 @@
 """Every grader of the kargo job checked with no model: the start carries none of day 1's facts, day 2 as given fails,
 a scripted day 2 that does everything right passes all ten checks whether it keeps the carrier's limit by pacing or by
-waiting out a 429, and each faulty variant fails its own check and no other. Then the runner's transcript marking.
+waiting out a 429, and each faulty variant fails its own check and no other. Then the runner's transcript marking and
+its reading of a Turkish sleep report.
 
     python bench/cross_session/run.py --job kargo --selftest
 """
@@ -201,6 +202,9 @@ def selftest(runner) -> int:
         changed = runner.typed(projects.parent)
         back = [json.loads(x) for x in (projects / "s.jsonl").read_text(encoding="utf-8").splitlines()]
         expect("day 1's transcript reads as typed", changed == 2 and back[0]["origin"]["kind"] == "human", back)
+        report = "1 projede 6 mesaj ve 0 commit okundu. Maliyet: 5.201 token (girdi 3.265, çıktı 1.936)."
+        expect("the Turkish sleep report's cost and message count are read",
+               runner.tokens_of(report) == 5201 and runner.messages_read(report) == 6, report)
     finally:
         checks.repo.remove(folder)
     print(f"{'all checks passed' if not problems else f'{len(problems)} failed'}")

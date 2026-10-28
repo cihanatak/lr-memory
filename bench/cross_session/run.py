@@ -153,13 +153,20 @@ def sleep_pass(base: Path, env: dict, claude: str, args) -> dict:
 
 
 def tokens_of(report: str) -> int:
-    found = re.search(r"Cost: ([\d,. ]+) tokens", report)
+    """The sleep report's cost, in English or in Turkish."""
+    found = re.search(r"(?:Cost|Maliyet): ([\d,. ]+) token", report)
     return int(re.sub(r"\D", "", found.group(1))) if found else 0
 
 
 def messages_read(report: str):
-    found = re.search(r"Read (\d+) messages", report)
-    return int(found.group(1)) if found else None
+    found = re.search(r"Read (\d+) messages|(\d+) mesaj ve", report)
+    return int(found.group(1) or found.group(2)) if found else None
+
+
+def slept(row: dict) -> int:
+    """The tokens of a row's sleep pass, read again from its report: runs before the Turkish reading counted 0."""
+    sleep = row.get("sleep") or {}
+    return sleep.get("tokens") or tokens_of(sleep.get("report", ""))
 
 
 def write(out: Path, name: str, row: dict) -> None:
@@ -305,7 +312,7 @@ def summary(rows: list, day1: list) -> str:
               (f"Task checks ({checks.TASK[0]}-{checks.TASK[-1]})", [f"{sum(r['task'] for r in by[a])} of "
                                                                      f"{len(checks.TASK) * len(by[a])}" for a in arms]),
               ("Day 2 tokens, median", [f"{med([r['tokens'] for r in by[a]]):,.0f}" for a in arms]),
-              ("Day 2 tokens with the sleep pass, median", [f"{med([r['all_tokens'] for r in by[a]]):,.0f}"
+              ("Day 2 tokens with the sleep pass, median", [f"{med([r['tokens'] + slept(r) for r in by[a]]):,.0f}"
                                                             for a in arms]),
               ("Words per answer, median", [f"{med([w for r in by[a] for w in r['words']]):g}" for a in arms]),
               ("Recall searches, median", [f"{med([r['recalls'] for r in by[a]]):g}" for a in arms]),
