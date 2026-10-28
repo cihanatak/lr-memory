@@ -11,7 +11,7 @@
     {
       "name": "lr-memory",
       "source": "./plugins/lr-memory",
-      "description": "A verbatim working note across compaction, a search over every past session (the recall skill), and a daily sleep pass that turns your own words into memory rules (the sleep skill). The note and the search are local and spend no model tokens.",
+      "description": "A verbatim working note across compaction, the turns of earlier sessions that each prompt brings back (the cue), a search over every past session (the recall skill), and a daily sleep pass that turns your own words into memory rules (the sleep skill). The note, the cue and the search are local and spend no model tokens.",
       "category": "productivity",
       "keywords": ["memory", "compaction", "recall", "search", "sleep"]
     },

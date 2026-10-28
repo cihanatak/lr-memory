@@ -18,8 +18,8 @@ from decimal import Decimal
 from pathlib import Path
 
 NAMES = ("I1", "I2", "I3", "I4", "I5", "I6", "I7", "I8", "R3", "R4", "F4")
-TURKISH = re.compile(r"[çğıöşüÇĞİÖŞÜ]|bilinmeyen|gecersiz|desteklen|bulunamad|hesap|para birim|hatal|tanimsiz|\byok\b",
-                     re.I)
+# Turkish letters match as they are: under re.I, "ı" would also match "i" (sre treats them as one letter)
+TURKISH = re.compile(r"[çğıöşüÇĞİÖŞÜ]|(?i:bilinmeyen|gecersiz|desteklen|bulunamad|hesap|para birim|hatal|tanimsiz|\byok\b)")
 API_NAMES = ("ROUTES", "ApiError", "route", "render_error", "handle", "health", "list_accounts", "get_account",
              "account_entries", "get_entry", "create_entry", "get_category")
 ORIGINAL_CSV = '2026-10-01,120.01,Kahve,12.50,TRY\n2026-10-02,320.01,"Kira, ekim",-8000.00,TRY\n'

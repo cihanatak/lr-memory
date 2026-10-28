@@ -22,7 +22,7 @@ def test_the_manifests_agree():
 
 def test_every_hook_runs_the_launcher():
     hooks = _json(PLUGIN / "hooks" / "hooks.json")["hooks"]
-    assert set(hooks) == {"PreCompact", "PostCompact", "SessionStart"}
+    assert set(hooks) == {"PreCompact", "PostCompact", "SessionStart", "UserPromptSubmit"}
     for groups in hooks.values():
         for group in groups:
             for h in group["hooks"]:

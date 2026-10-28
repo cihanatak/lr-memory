@@ -5,7 +5,8 @@
   lrm.py update [--background]
   lrm.py sleep [--dry-run] [--hours 48] [--project <name>] [--background]
                              turn what the user said since the last pass into memory files (one claude -p per project)
-  lrm.py hook                PreCompact, PostCompact and SessionStart, each reading its event as JSON on stdin
+  lrm.py hook                PreCompact, PostCompact, SessionStart and UserPromptSubmit, each reading its event as
+                             JSON on stdin
 """
 from __future__ import annotations
 
@@ -16,7 +17,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from lr_memory import archive, common, note, sleep  # noqa: E402
+from lr_memory import archive, common, cue, note, sleep  # noqa: E402
 
 
 def hook() -> int:
@@ -28,6 +29,8 @@ def hook() -> int:
             note.precompact(data)
         elif event == "PostCompact":
             note.postcompact(data)
+        elif event == "UserPromptSubmit":
+            cue.prompt(data)
         elif event == "SessionStart":
             note.sessionstart(data)
             archive.spawn_update()

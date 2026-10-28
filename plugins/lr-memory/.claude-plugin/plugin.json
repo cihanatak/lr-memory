@@ -1,8 +1,8 @@
 {
   "name": "lr-memory",
   "displayName": "LR Memory",
-  "version": "0.2.0",
-  "description": "Keeps the working thread across compaction with a verbatim working note, lets Claude search every past session instead of guessing, and, when you ask for it, turns your own words into memory rules once a day. The note and the search are local and spend no model tokens.",
+  "version": "0.3.0",
+  "description": "Keeps the working thread across compaction with a verbatim working note, puts the turns of earlier sessions that each prompt brings back in front of Claude, lets it search every past session instead of guessing, and, when you ask for it, turns your own words into memory rules once a day. The note, the cue and the search are local and spend no model tokens.",
   "author": {
     "name": "Cihan Atak",
     "url": "https://github.com/cihanatak"

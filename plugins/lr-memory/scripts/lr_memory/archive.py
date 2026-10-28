@@ -308,10 +308,10 @@ def _pattern(term: str) -> re.Pattern:
                       + (r"(?![^\W_])" if _exact(term) else ""))
 
 
-def search(query: str, k: int = 8, kinds: str = "", since: str = "", session: str = "") -> list:
+def search(query: str, k: int = 8, kinds: str = "", since: str = "", session: str = "", within=()) -> list:
     """The best k hits. A hit scores the rarity (IDF) of each query term it carries, the whole word's when it has
     that and the stem's otherwise, so one exact name outweighs several common words; BM25 weighted by kind breaks
-    ties."""
+    ties. within: these sessions only."""
     terms = _terms(query)
     if not terms:
         return []
@@ -332,6 +332,9 @@ def search(query: str, k: int = 8, kinds: str = "", since: str = "", session: st
         if session:
             sql += " and session like ?"
             args.append(session + "%")
+        if within:
+            sql += f" and session in ({','.join('?' * len(within))})"
+            args += list(within)
         current = os.environ.get("CLAUDE_CODE_SESSION_ID", "")
         if current and not session:
             # what this session said since its last compaction is in context already; as a hit (the question

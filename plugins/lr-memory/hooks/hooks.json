@@ -1,5 +1,5 @@
 {
-  "description": "lr-memory: a verbatim working note across compaction, and a search index over every past session",
+  "description": "lr-memory: a verbatim working note across compaction, a search index over every past session, and the turns of earlier sessions that each prompt brings back",
   "hooks": {
     "PreCompact": [
       {
@@ -16,6 +16,13 @@
       }
     ],
     "SessionStart": [
+      {
+        "hooks": [
+          {"type": "command", "command": "sh \"${CLAUDE_PLUGIN_ROOT}/scripts/run.sh\" hook", "timeout": 30}
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
       {
         "hooks": [
           {"type": "command", "command": "sh \"${CLAUDE_PLUGIN_ROOT}/scripts/run.sh\" hook", "timeout": 30}
