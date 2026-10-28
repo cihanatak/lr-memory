@@ -27,6 +27,16 @@ def test_prediction_lines_are_read_as_numbers_not_as_names():
     assert predict.expectation("41 passed (~1 sec)") == pytest.approx((36.9, 45.1))  # the due time is no value
 
 
+def test_a_version_or_a_list_is_no_quantity():
+    line = "GitHub'dan col 0.1.0 + lr-memory 0.2.0 kurulur, kurulu kancalar yanıt verir (~2 dk)"
+    assert predict.expectation(line, tr=True) == (None, None)  # "0.1.0" once raised, and the result never closed
+    verdict, _ = predict.compare(line, "2 eklenti GitHub'dan kuruldu; denenen 2 kanca yanıt verdi", tr=True)
+    assert isinstance(verdict, str)
+    assert predict.expectation("Claude Code 2.1.308 ile 41 test geçer", tr=True) == pytest.approx((36.9, 45.1))
+    assert predict.expectation("adım 1,2,3 sonra 5 test", tr=True) == pytest.approx((4.5, 5.5))
+    assert predict.expectation("1.234.567 satır", tr=True) == pytest.approx((1111110.3, 1358023.7))
+
+
 def test_markers_are_read_in_english_and_turkish():
     said = ("The run is done. Result [t1]: win rate 41; lower than expected.\n"
             "**Prediction [a]:** 5 tests pass. Prediction [b]: 0 errors\n"

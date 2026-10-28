@@ -39,6 +39,9 @@ IN_DESC = re.compile(r"(?:öngörü|beklenti|prediction|expected|expectation)\s*
                      re.I)
 CLOCK = re.compile(r"\b([01]?\d|2[0-3]):([0-5]\d)\b")  # "22:00"; "22.00" would swallow decimals like 1.25
 DATE = re.compile(r"\b\d{4}-\d{2}-\d{2}\b|\b\d{1,2}[./]\d{1,2}[./]\d{2,4}\b")
+# a version or a list ("col 0.1.0", "v2.1.308", "steps 1,2,3") is no quantity, and float() cannot read it; a
+# thousands grouping ("1.234.567") is one
+SERIES = re.compile(r"(?<![\w@.,])v?\d+([.,])\d+(?:\1\d+)+(?![.,]?\d)", re.I)
 # waits, watchers and servers run in the background too, but they have no result to predict
 NOT_A_JOB = re.compile(r"\bsleep\b|Start-Sleep|^\s*(?:until|while)\b|tail\s+-f|-Wait\b|http\.server|"
                        r"\b(?:npm|pnpm|yarn|bun)\b[^|;&\n]*?\s(?:run\s+)?(?:dev|preview|start|serve)(?=\s|$)|\bvite\b|"
@@ -92,6 +95,8 @@ def num(s: str, tr: bool = False) -> float:
 
 
 def _plain(text: str) -> str:
+    text = SERIES.sub(lambda m: m.group(0) if all(len(p) == 3 for p in re.split(r"[.,]", m.group(0))[1:]) else " ",
+                      text)
     return CLOCK.sub(" ", DATE.sub(" ", text))
 
 
