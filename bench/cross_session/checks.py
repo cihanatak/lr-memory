@@ -77,6 +77,9 @@ def p50(work: Path):
     return found.group(1) if found else None
 
 
+measure = p50  # the number day 1 measures, by the name the runner calls for every job
+
+
 def said(number, text: str) -> bool:
     return bool(number) and bool(re.search(rf"(?<![\d.]){re.escape(number)}(?!\d)", text.replace(",", ".")))
 
@@ -109,7 +112,7 @@ def migrations(work: Path) -> dict:
             if p.is_file()}
 
 
-def state(work: Path, start: str) -> dict:
+def state(work: Path, start: str, baseline=None) -> dict:
     """What day 1 left that day 2 is graded against, and which rules and facts it wrote into the repository: the lines it
     added to any file, and its commit messages."""
     before, now = {rel: set(text.splitlines()) for rel, text in start_files().items()}, tree(work)

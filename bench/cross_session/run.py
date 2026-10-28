@@ -8,6 +8,8 @@
                                                                      same copy of day 1
     python bench/cross_session/run.py --summary <results folder>     the tables again
 
+--job kargo runs the second job instead of ledgerly's: a Turkish shop's shipping module, in kargo/.
+
 Day 2 runs in day 1's folder with day 1's config folder, so Claude Code's own memory carries over as it does on a
 user's machine; the arms of a chain take turns, each from a fresh copy of what day 1 left. A second run with the same
 --out skips what is already there, so --n 3 after --scan reuses the scan's chain. Real tokens are spent, most of them
@@ -32,10 +34,8 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-import checks  # noqa: E402
-import days  # noqa: E402
-import selfcheck  # noqa: E402
 
+JOBS = ("ledgerly", "kargo")  # each with its own days, checks and selftest; ledgerly's sit beside this file
 LRM = HERE.parents[1] / "plugins" / "lr-memory"
 ARMS = {"N": "Claude Code alone", "L": "with LR Memory"}
 RECALL = re.compile(r"(?:run\.sh|lrm\.py)\\?\"? (?:search|show)")  # a recall command inside a tool call's JSON
@@ -53,6 +53,15 @@ def _long_run():
 
 
 lr_run = _long_run()
+
+
+def use(job: str) -> None:
+    """Load a job's days, checks and selftest; a run does one job."""
+    global checks, days, selfcheck
+    sys.path.insert(0, str(HERE if job == "ledgerly" else HERE / job))
+    import checks
+    import days
+    import selfcheck
 
 
 def version() -> str:
@@ -172,7 +181,7 @@ def day_one(i: int, base: Path, args, claude: str, env: dict, out: Path) -> dict
     work = base / "work"
     work.mkdir(parents=True)
     start = checks.prepare(work)
-    row = {"chain": i, "day": 1, "start": start, "baseline": checks.p50(work)}
+    row = {"chain": i, "day": 1, "start": start, "baseline": checks.measure(work)}
     began = time.time()
     events, turns = lr_run.session(lr_run.command(claude, args, "1M", False), work, lr_run.child(env, base, False),
                                    days.DAY1, args.turn_timeout, out / "streams" / f"c{i}-day1.stderr")
@@ -180,7 +189,7 @@ def day_one(i: int, base: Path, args, claude: str, env: dict, out: Path) -> dict
     m = lr_run.metrics(events)
     row.update(turns=turns, seconds=round(time.time() - began), tokens=m["tokens"], calls=m["calls"],
                words=[checks.words(t) for _, t in sorted(finals(events).items())], memory=memory(base),
-               state=checks.state(work, start))
+               state=checks.state(work, start, row["baseline"]))
     row["ok"] = len(turns) == len(days.DAY1) and all(t["status"] == "ok" for t in turns)
     if row["ok"]:
         for name in ("work", "config"):
@@ -199,6 +208,8 @@ def day_two(i: int, arm: str, base: Path, day1: dict, args, claude: str, env: di
     for name in ("work", "config"):
         shutil.copytree(base / "day1" / name, base / name)
     e = lr_run.child(env, base, lr)
+    if lr:
+        e["LR_MEMORY_LANG"] = getattr(days, "LANG", "en")
     row = {"chain": i, "day": 2, "arm": arm}
     try:
         if lr:
@@ -259,8 +270,8 @@ def progress(row: dict) -> str:
                 f"tokens, {row['seconds']} s, memory files {sorted(row['memory'])}, leaks "
                 f"{[k for k, v in row['state']['leaks'].items() if v]}")
     sleep = row.get("sleep") or {}
-    return (f"c{row['chain']} day 2 {column(row)}: memory {row['memory']}/{row['of_memory']}, rules {row['rules']}/3, "
-            f"task {row['task']}/5, {row['tokens']:,} tokens" + (f" + sleep {sleep.get('tokens', 0):,} (read "
+    return (f"c{row['chain']} day 2 {column(row)}: memory {row['memory']}/{row['of_memory']}, rules {row['rules']}/"
+            f"{len(checks.RULES)}, task {row['task']}/{len(checks.TASK)}, {row['tokens']:,} tokens" + (f" + sleep {sleep.get('tokens', 0):,} (read "
                                                                     f"{sleep.get('read')})" if sleep else "")
             + f", recalls {row['recalls']}" + (f", cued {len(row['cued'])}" if "cued" in row else "")
             + f", {row['seconds']} s; failed "
@@ -286,10 +297,13 @@ def summary(rows: list, day1: list) -> str:
     for k in checks.CHECKS:
         lines.append((k, [f"{sum(r['checks'][k][0] is True for r in by[a])} of "
                           f"{sum(r['checks'][k][0] is not None for r in by[a])}" for a in arms]))
-    lines += [("Memory checks passed (C3 C4 F1 F2)", [f"{sum(r['memory'] for r in by[a])} of "
-                                                       f"{sum(r['of_memory'] for r in by[a])}" for a in arms]),
-              ("Rules kept (C1 C2 C5)", [f"{sum(r['rules'] for r in by[a])} of {3 * len(by[a])}" for a in arms]),
-              ("Task checks (T1-T5)", [f"{sum(r['task'] for r in by[a])} of {5 * len(by[a])}" for a in arms]),
+    lines += [(f"Memory checks passed ({' '.join(checks.MEMORY)})", [f"{sum(r['memory'] for r in by[a])} of "
+                                                                    f"{sum(r['of_memory'] for r in by[a])}"
+                                                                    for a in arms]),
+              (f"Rules kept ({' '.join(checks.RULES)})", [f"{sum(r['rules'] for r in by[a])} of "
+                                                          f"{len(checks.RULES) * len(by[a])}" for a in arms]),
+              (f"Task checks ({checks.TASK[0]}-{checks.TASK[-1]})", [f"{sum(r['task'] for r in by[a])} of "
+                                                                     f"{len(checks.TASK) * len(by[a])}" for a in arms]),
               ("Day 2 tokens, median", [f"{med([r['tokens'] for r in by[a]]):,.0f}" for a in arms]),
               ("Day 2 tokens with the sleep pass, median", [f"{med([r['all_tokens'] for r in by[a]]):,.0f}"
                                                             for a in arms]),
@@ -307,7 +321,8 @@ def summary(rows: list, day1: list) -> str:
         if both:
             wins = sum(not v["N"] and v[a] for v in both)
             losses = sum(v["N"] and not v[a] for v in both)
-            out += ["", f"Paired over chains and the seven memory and rule checks: {a} passed where N failed {wins} "
+            out += ["", f"Paired over chains and the {len(checks.MEMORY + checks.RULES)} memory and rule checks: {a} "
+                        f"passed where N failed {wins} "
                         f"times, and the other way round {losses} times; two-sided sign test "
                         f"p = {sign_test(wins, losses):.3f}."]
     for r in day1:
@@ -319,6 +334,7 @@ def summary(rows: list, day1: list) -> str:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="LR Memory's cross-session bench")
+    ap.add_argument("--job", default="ledgerly", choices=JOBS)
     ap.add_argument("--selftest", action="store_true", help="every grader on scripted days, no model")
     ap.add_argument("--scan", action="store_true", help="one chain, day 2 with Claude Code alone")
     ap.add_argument("--n", type=int, default=3, help="chains")
@@ -335,6 +351,7 @@ def main() -> int:
     ap.add_argument("--keep", action="store_true", help="keep each chain's folders after day 2")
     ap.add_argument("--summary", default="", help="print the tables of a results folder")
     args = ap.parse_args()
+    use(args.job)
     if args.selftest:
         return selfcheck.selftest(sys.modules[__name__])
     if args.summary:
@@ -345,8 +362,8 @@ def main() -> int:
     arms, n = (["N"], 1) if args.scan else (args.arms.split(","), args.n)
     chains = [int(x) for x in args.chains.split(",")] if args.chains else list(range(1, n + 1))
     args.keep = args.keep or args.scan  # the scan's chain is reused by the full run
-    print(f"chains {chains}, arms {arms}{' without the sleep pass' if args.no_sleep else ''}, {args.parallel} at a "
-          f"time; results in {out}", flush=True)
+    print(f"{args.job}: chains {chains}, arms {arms}{' without the sleep pass' if args.no_sleep else ''}, "
+          f"{args.parallel} at a time; results in {out}", flush=True)
     with cf.ThreadPoolExecutor(args.parallel) as pool:
         list(pool.map(lambda i: chain(i, arms, args, out), chains))
     text = summary(rows_of(out, "results.jsonl"), rows_of(out, "day1.jsonl"))
