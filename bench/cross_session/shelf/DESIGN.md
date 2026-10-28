@@ -95,3 +95,88 @@ Word counts use the cue's own term rules, on the messages as the subagent wrote 
   way round at most once.
 - **Tokens.** The sleep pass 5,000 to 9,000 tokens a chain. Day 2's median for L, its sleep pass included, between 0.8
   and 1.6 times N's. The scan and the run together about 3M (2M to 4.5M).
+
+## Results (29 October 2026)
+
+The scan (chain 1, N only): memory 0 of 4, rules 2 of 2, 736,665 tokens. Claude Code alone kept both rules, which its
+own memory had written down on day 1, and lost every fact. The job went on to three chains, N and L, on Sonnet 5.5:
+
+| | N: Claude Code alone | L: with LR Memory 0.3.1 |
+| --- | --- | --- |
+| T1, T2: labels for plain books and an anonymous work | 6 of 6 | 6 of 6 |
+| T3: the repository's tests | 1 of 3 | 1 of 3 |
+| T4: today's count in docs/data_quality.md | 1 of 3 | 3 of 3 |
+| C1: a line under Unreleased | 1 of 3 | 3 of 3 |
+| C2: api.py's names kept | 1 of 3 | 3 of 3 |
+| C3: short answers | 0 of 3 | 0 of 3 |
+| F1: the reason, the board and the reading room | 0 of 3 | 3 of 3 |
+| F2: yesterday's 191 | 0 of 3 | 3 of 3 |
+| F3: plain ASCII labels for the 23 accented titles | 0 of 3 | 3 of 3 |
+| Memory checks (C3 F1 F2 F3) | 0 of 12 | 9 of 12 |
+| Day-2 tokens, median (L with its sleep pass) | 212,052 | 254,801 |
+
+Paired over the three chains and the six memory and rule checks, L passed where N failed 13 times and the other way
+round never (two-sided sign test, p = 0.0002). The test counts the 18 pairs as independent, and they are not quite:
+the checks of one chain share its day 1. Counted by chain, L was ahead in 3 of 3. The facts alone, without the two
+rules that N lost only where its own memory had written nothing (below), give 9 and 0, p = 0.004.
+`python bench/cross_session/run.py --job shelf --summary <folder>` prints the full table.
+
+Where each fact came from, read from the memory files at day 2's start, the turns the cue showed, and the code:
+
+- **F3, the printer.** LR Memory's sleep pass wrote it into memory in all three chains, as a fact in the user's words:
+  "The label printer at the checkout desk is old and only prints plain ASCII, so accented letters come out as question
+  marks." The cue brought day 1's fifth turn in chain 1 only, so in chains 2 and 3 the memory file was the one source.
+  Day 2's code said so ("Spine labels for the checkout desk printer, which prints plain ASCII only.", chain 2) and
+  dropped the accents. Claude Code alone wrote labels that keep them, "Charlotte Brontë", in all three chains.
+- **F1.** The sleep pass wrote the fee and its reason into memory in all three chains, and the cue brought the
+  correction in all three. Claude Code alone found no reason in the repository and did not make one up: it asked for it
+  in chains 1 and 3, and in chain 2 wrote a comment that says how the fee is worked out, "not why".
+- **F2.** No memory file held 191 in any chain. The cue brought day 1's fourth turn and its reply in all three.
+  Claude Code alone ran the audit and found no baseline. In chains 1 and 2 it wrote nothing into docs/data_quality.md
+  and asked for the number; in chain 3 it wrote today's count alone. In chain 1 it counted the old way and got 191,
+  but would not write that down as yesterday's number.
+- **C1 and C2.** Claude Code's own memory was on in all three day-1 sessions, with the same settings, and wrote the two
+  rules down in chain 1 only. In chains 2 and 3 it wrote nothing, and day 2 there renamed `member_lonas`, which the
+  kiosk calls, and added no changelog line. L kept both rules in all three chains: the sleep pass wrote them, and the
+  cue brought day 1's first turn.
+- **C3.** "Keep summaries short" was in memory for L in all three chains: written by the sleep pass in chains 2 and 3,
+  by Claude Code's own memory in chain 1. Every arm's answers stayed long, a median of 128 words for L and 155 for N.
+- **T3.** Day 1 in chains 2 and 3 changed the loan period to 21 days and left a test that expects 14 failing. It fails
+  on the day-1 snapshot, and neither arm fixed it, so it measures day 1, not the arms.
+
+Tokens. L's day 2, its sleep pass of 4,560 to 5,199 tokens included, cost 5% less, 53% more and 24% more than N's,
+chain by chain. As in kargo, Claude Code alone did less: it wrote no reason and no baseline in any chain, where L wrote
+both in all three. The scan and the run took 2.48M tokens together.
+
+Predictions that held: the scan (0 of 4 memory checks, 0.74M tokens); F3 (L 3, N 0); F1 (L 3, N 0); F2 (L 3, N 0); C3
+(0 and 0); the rules in L (6 of 6); paired wins and losses (13 and 0); L's day-2 median, 1.20 times N's; the total
+(2.48M). Those that missed: the rules in N (2 of 6, not about 5), because Claude Code's own memory wrote nothing in two
+of the three day-1 sessions; the sleep pass's tokens (4,560 to 5,199 a chain, not 5,000 to 9,000).
+
+The sleep pass alone, on this job's day 1, run after the job with 0.3.0 for comparison: three passes per chain on each
+chain's saved day 1, nothing else run ([sleep_probe.py](../sleep_probe.py)).
+
+| Of 9 passes | 0.3.0 | 0.3.1 |
+| --- | --- | --- |
+| The printer's limit written into memory | 4 | 9 |
+| The limit held back as a candidate | 5 | 0 |
+| The fee's reason written into memory | 0 | 9 |
+| Tokens, all 9 passes | 41,100 | 43,615 |
+
+0.3.0 wrote the limit in all three of chain 1's passes, and in one of the six on chains 2 and 3, the two chains where
+the cue did not bring the printer's turn. With 0.3.0, those two chains would have had the printer in memory about one
+time in six; with 0.3.1 they had it every time. A first attempt at this probe ran into the account's usage limit after
+7 of its 18 passes and counted the 11 failed passes as passes that wrote nothing. sleep_probe.py now leaves a failed
+pass out of its counts, says how many failed, and exits with 1.
+
+What it says:
+
+- **The fix carries over to a job it was not built on.** A limit mentioned in passing, in a message about something
+  else, reached the next day's code in 3 of 3 chains through the memory the sleep pass wrote; nobody mentioned it on day
+  2. On the same day-1 record, 0.3.0's sleep pass held it back in five passes of nine and never wrote the fee's reason.
+  Claude Code alone printed accented labels in all three chains.
+- **The cue's results hold in a third job.** The measured number and the reason came back in 3 of 3 chains, against 0
+  of 3.
+- **Claude Code's own memory is not reliable for rules.** With the same settings in all three day-1 sessions, it wrote
+  the two rules down in one. Without them, day 2 renamed a function the kiosk calls.
+- **Short answers are still not kept.** 0 of 3 in both arms, although the complaint was in memory for every L session.

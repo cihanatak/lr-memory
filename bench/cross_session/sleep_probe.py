@@ -82,11 +82,13 @@ def main() -> int:
     with cf.ThreadPoolExecutor(args.parallel) as pool:
         rows = list(pool.map(lambda j: one(*j, args, claude, env), jobs))
     for v in sorted({r["version"] for r in rows}):
-        rs = [r for r in rows if r["version"] == v]
+        failed = sum(bool(r["error"]) for r in rows if r["version"] == v)
+        rs = [r for r in rows if r["version"] == v and not r["error"]]  # a pass that failed says nothing either way
         print(f"{v}: " + ", ".join(f"{f} written {sum(r['written'][f] for r in rs)}/{len(rs)}, held back "
                                    f"{sum(r['waiting'][f] and not r['written'][f] for r in rs)}" for f in FACTS)
-              + f"; files per pass {[len(r['applied']) for r in rs]}; {sum(r['tokens'] for r in rs):,} tokens")
-    return 0
+              + f"; files per pass {[len(r['applied']) for r in rs]}; {sum(r['tokens'] for r in rs):,} tokens"
+              + (f"; {failed} failed and not counted" if failed else ""))
+    return 1 if any(r["error"] for r in rows) else 0
 
 
 if __name__ == "__main__":
