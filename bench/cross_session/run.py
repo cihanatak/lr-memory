@@ -8,7 +8,8 @@
                                                                      same copy of day 1
     python bench/cross_session/run.py --summary <results folder>     the tables again
 
---job kargo runs the second job instead of ledgerly's: a Turkish shop's shipping module, in kargo/.
+--job kargo runs the second job instead of ledgerly's: a Turkish shop's shipping module, in kargo/. --job shelf runs
+the third: a community library's circulation software, in shelf/.
 
 Day 2 runs in day 1's folder with day 1's config folder, so Claude Code's own memory carries over as it does on a
 user's machine; the arms of a chain take turns, each from a fresh copy of what day 1 left. A second run with the same
@@ -35,7 +36,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
-JOBS = ("ledgerly", "kargo")  # each with its own days, checks and selftest; ledgerly's sit beside this file
+JOBS = ("ledgerly", "kargo", "shelf")  # each with its own days, checks and selftest; ledgerly's sit beside this file
 LRM = HERE.parents[1] / "plugins" / "lr-memory"
 ARMS = {"N": "Claude Code alone", "L": "with LR Memory"}
 RECALL = re.compile(r"(?:run\.sh|lrm\.py)\\?\"? (?:search|show)")  # a recall command inside a tool call's JSON
