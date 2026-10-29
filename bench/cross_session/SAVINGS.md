@@ -173,6 +173,22 @@ Since every call carries the context before it, a session's tokens grow with the
 tokens a call, an afternoon that ends at 150k takes about 90 calls and 8M tokens. Resuming this afternoon where it
 ended and taking it to 150k costs about 6M at the same rate, and about 3M if each call adds 3,000.
 
+**L and R on this afternoon (written 29 October 2026, before the run).** The stop rule said the afternoon gets longer
+before anything else runs. L and R run on it anyway, as a cheap early check before a longer afternoon costs 3M to 6M
+more: does LR Memory keep the morning's facts and rules through nine more messages? Their tokens add a point between
+the short day and a long one. Predicted, on chain 2:
+- R's first call carries 71k to 74k tokens of context, and its day 2 costs 0.55M to 1.3M tokens (median 0.75M):
+  9 to 15 calls, each carrying all of day 1.
+- L costs 0.2M to 0.4M tokens with its nightly pass (median 0.27M), so L/R is 0.15 to 0.7 (median 0.35).
+- R passes F1, F2, F3 and both rules, as on the short day. Neither arm passes C3.
+- L passes 2 or 3 of F1 to F3 and 1 or 2 of the rules. If it loses one, it is most likely F3, the printer: on the short
+  day it reached day 2 through the memory file alone, and the nightly pass, which writes at most six changes, now also
+  reads the afternoon's two limits.
+- Both runs cost about 1.0M tokens (0.8M to 1.6M).
+
+If L keeps F1 to F3 and both rules, the afternoon gets longer next, designed with its predictions before any run. If
+it loses any, what its nightly pass wrote is read first.
+
 ## Limits
 
 - Day 1 here is short. On a real day, the context carried back is more than ten times larger, and so should be the
