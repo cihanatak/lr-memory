@@ -5,8 +5,9 @@ A subagent wrote them in English, with no tools, from their content given in Tur
 summaries, a measured number, and in passing that the desk's label printer prints only ASCII. Day 2 is a fresh session
 in the same folder that restates none of it.
 
-The long day's afternoon comes back to day 1's session after lunch with nine more messages, written
-the same way, and repeats none of day 1's facts.
+The long day's afternoon comes back to day 1's session after lunch with nine more messages, written the same way,
+and repeats none of day 1's facts. Its evening comes back once more after dinner with ten, around the front desk's
+log of the day, and repeats none of them either.
 """
 
 LANG = "en"  # the language LR Memory writes its cue and its notes in for this job
@@ -57,6 +58,38 @@ AFTERNOON = (  # the long day (../SAVINGS.md): after lunch, day 1's session agai
     "Can you write docs/holds.md for the volunteers? Explain how holds work at the desk, in plain language. They're"
     " not technical so keep it simple.",
     "Last one: run all the tests one more time and tell me where things stand. That's really it for today.",
+)
+
+EVENING = (  # the longer day (../SAVINGS.md): after dinner, day 1's session once more
+    "Hey, I'm back after dinner. The volunteers meeting is tomorrow morning, so I want to put in a bit more work "
+    "tonight to get ready for it. The front desk tried the new holds code on the desk computer today and sent me "
+    "their log for the day, and I put it in the repo this evening as data/desk_log.txt, a few hundred lines. Please "
+    "read it and tell me what went wrong at the desk today. No code changes for now, I just want to understand what "
+    "happened.",
+    "In the log there's a crash when somebody tries to cancel a hold that was already collected, and the whole "
+    "program falls over. Start by writing a test that reproduces it, then fix it.",
+    "New info: the Riverside branch is closed on Mondays. So when a hold is ready and waiting at Riverside, its 7-day "
+    "pickup window shouldn't count Mondays, since nobody can come in on those days. Please change the code to work "
+    "that way and add tests for it.",
+    "Before tomorrow's meeting I want to go over everything that changed today. Show me the whole diff from how the "
+    "repo looked at the start of this morning up to now. Then walk me through it file by file, so I know what changed "
+    "in each file and why. I want to be able to explain it all to the volunteers without guessing.",
+    "Some of the book titles in the Riverside file are typed differently from how they are in our catalog, like all "
+    "lowercase or with extra spaces. I want to see every row the import couldn't match to the catalog, along with the "
+    "reason for each. I need the whole list before I decide what to do about them.",
+    "I'd like a new script at scripts/holds_report.py. For each book it should show, in a table, how many holds are "
+    "waiting, how many are ready, and how many have expired. After you've built it, run it on the Riverside data we "
+    "imported and show me the output.",
+    'The coordinator asked for a change. Staff accounts, meaning any member number that starts with "S-", '
+    "shouldn't be subject to the limit of at most 5 holds at the same time. Please change the code so the limit no "
+    "longer applies to them.",
+    "Run the whole test suite in verbose mode, I want to see the name of every test listed. Also tell me how many "
+    "tests there are in total now.",
+    "The desk computer is pretty slow, so I'm a bit worried about speed there. Measure how long it takes to place a "
+    "new hold when the system already has 5,000 holds in it. Then tell me whether that would be a problem for the "
+    "people at the desk.",
+    "Last thing for tonight. Run all the tests again, and then tell me where everything stands for tomorrow's "
+    "meeting, what's finished and what's still open.",
 )
 
 DAY2 = (

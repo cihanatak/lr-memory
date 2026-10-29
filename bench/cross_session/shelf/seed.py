@@ -11,6 +11,7 @@ from __future__ import annotations
 import csv
 import io
 import random
+import re
 import unicodedata
 from datetime import datetime, timedelta
 
@@ -637,14 +638,15 @@ keep it in one clearly named place so it is easy to change.
 """  # the working group's spec, as a subagent wrote it
 
 OTHER = [("The Remains of the Day", "Kazuo Ishiguro"), ("Beloved", "Toni Morrison"),
-         ("Never Let Me Go", "Kazuo Ishiguro")]  # held at Riverside, not in shelf's catalog
+         ("Never Let Me Go", "Kazuo Ishiguro")]  # meant to be titles shelf does not hold, but all three are in BOOKS
 STATES = ("waiting",) * 5 + ("on shelf", "collected", "withdrawn")  # Riverside's words for a hold's state
 
 
 def riverside_csv() -> str:
     """The Riverside branch's holds as their own system exports them: semicolons, day-first dates, their own words for
     a hold's state, and the slips of a list kept by hand, such as stray spaces, a title in lower case, an author left
-    out, a row entered twice, and a few titles shelf does not hold."""
+    out and a row entered twice. OTHER was meant to add a few titles shelf does not hold, but all three are in its
+    catalog; found after chain 2's long afternoon had run on this file, and left so that every chain reads the same."""
     rng = random.Random(2611)
     wanted = rng.sample(BOOKS, 12)  # most holds are for a dozen titles
     out = io.StringIO()
@@ -672,3 +674,60 @@ def afternoon_files() -> dict:
     """What the user put into the repository over lunch on the long day (../SAVINGS.md): the working group's spec
     for holds, and the Riverside branch's holds."""
     return {"docs/holds_spec.md": HOLDS_SPEC, "data/riverside_holds.csv": riverside_csv()}
+
+
+TRACE = ("Traceback (most recent call last):", '  File "shelf/api.py", line 96, in handle',
+         "    return ROUTES[name](*args)", '  File "shelf/holds.py", line 142, in cancel', "    queue.remove(hold)",
+         "ValueError: list.remove(x): x not in list")  # what the desk saw when a hold already collected was cancelled
+MISSING = ("Klara and the Sun", "The Buried Giant")  # asked for at the desk, and not in shelf's catalog
+
+
+def desk_log() -> str:
+    """The front desk's log of the day it tried holds: loans, returns, renewals and holds, place_hold answering slowly,
+    a staff account turned away at the limit, holds asked for titles shelf does not hold, and a crash each time a hold
+    already collected was cancelled. A title with a word day 1 said ("brief") stays out, and so does member 191, day
+    1's count of bad ISBNs."""
+    rng = random.Random(2910)
+    titles = [b[0] for b in BOOKS if not re.search(r"\bbrief\b", b[0], re.I)]
+    members = [f"m{n}" for n in range(1, 400) if n != 191]
+    now, lines, collected = datetime(2026, 10, 29, 9, 0), [], []
+    for k in range(330):
+        now += timedelta(seconds=rng.randrange(40, 150))
+        at, member, title = now.strftime("%Y-%m-%d %H:%M:%S"), rng.choice(members), rng.choice(titles)
+        copy = f"310{rng.randrange(100000):05d}"
+        if k in (81, 167, 254) and collected:
+            gone, who = rng.choice(collected)
+            lines += [f'{at} ERROR hold cancel title="{gone}" member={who}', *TRACE]
+        elif k in (109, 221):
+            lines.append(f'{at} WARN  hold refused member={"S-0007" if k < 200 else "S-0012"} reason="5 holds already"')
+        elif k in (138, 292):
+            lines.append(f'{at} WARN  hold refused member={member} reason="not in the catalog: {MISSING[k > 200]}"')
+        else:
+            r = rng.random()
+            if r < 0.24:
+                lines.append(f"{at} INFO  lend copy={copy} member={member}")
+            elif r < 0.46:
+                lines.append(f"{at} INFO  return copy={copy} member={member}")
+            elif r < 0.54:
+                lines.append(f"{at} INFO  renew copy={copy} member={member}")
+            elif r < 0.70:
+                lines.append(f'{at} INFO  hold placed title="{title}" member={member} position={rng.randint(1, 9)}')
+                if rng.random() < 0.15:
+                    lines.append(f"{at} WARN  place_hold took {rng.uniform(1.6, 4.8):.1f} s, "
+                                 f"{rng.randrange(800, 4800)} holds in the system")
+            elif r < 0.78:
+                lines.append(f'{at} INFO  hold ready title="{title}" member={member} copy={copy}')
+            elif r < 0.86:
+                lines.append(f'{at} INFO  hold collected title="{title}" member={member} copy={copy}')
+                collected.append((title, member))
+            elif r < 0.92:
+                lines.append(f'{at} INFO  hold cancelled title="{title}" member={member}')
+            else:
+                lines.append(f'{at} INFO  search text="{title.split()[-1].lower()}" results={rng.randint(0, 12)}')
+    return "\n".join(lines) + "\n"
+
+
+def evening_files() -> dict:
+    """What the user puts into the repository after dinner on the long day's evening (../SAVINGS.md): the front desk's
+    log of the day."""
+    return {"data/desk_log.txt": desk_log()}

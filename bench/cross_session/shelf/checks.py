@@ -53,6 +53,11 @@ def afternoon_files() -> dict:
     return seed.afternoon_files()
 
 
+def evening_files() -> dict:
+    """The files the user puts into the repository before the long day's evening."""
+    return seed.evening_files()
+
+
 def prepare(work: Path) -> str:
     """Write the start into `work` and commit it as shelf 0.6.1; returns the commit."""
     for rel, text in start_files().items():

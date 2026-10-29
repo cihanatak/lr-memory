@@ -4,8 +4,8 @@ Claude Code alone has two ways to start the next day. A fresh session with its o
 that is this bench's arm N. Resuming yesterday's session remembers everything, because every call carries all of
 yesterday. The claim to test is that LR Memory gives what a resumed session remembers at what a fresh session costs.
 This file finds where the tokens go first, from records that already exist, then sets out the experiment with its
-predictions, written before any run, stage 1's result, the long day designed after it, and how far its first stage
-went.
+predictions, written before any run, stage 1's result, the long day designed after it, how far its first stage went,
+and the evening designed after that.
 
 ## Where the tokens go (no model tokens)
 
@@ -214,6 +214,58 @@ it cost after the short day (622,146 against 246,789), and L's did not grow (191
 cost follows yesterday's length; a fresh session's does not. Of R's tokens, 98.5% were cache reads, which cost a tenth
 of fresh input, and its cache was warm, since day 2 ran within the hour after day 1. A day later, its first call would
 write all of day 1 into the cache again.
+
+## The evening (designed 29 October 2026, before any run)
+
+L kept the morning's facts and rules through the afternoon, so day 1 now gets longer, as planned: by an evening after
+the afternoon, so that stage A's afternoon and its three day-2 results stay as they are. The user comes back after
+dinner, and chain 2's day 1 session, which the afternoon already resumed, is resumed once more, with ten messages
+(`EVENING` in [shelf/days.py](shelf/days.py)) and the front desk's log of the day, which the user put into the
+repository (`data/desk_log.txt`: 355 lines, 24,008 characters, from `desk_log()` in [shelf/seed.py](shelf/seed.py)).
+The desk tried the holds code that day. Its log has loans, returns, renewals and holds, place_hold taking 1.9 to 3.5
+seconds seven times, two staff accounts turned away at the limit of 5 holds, two titles asked for that shelf does not
+hold, and three crashes when a hold already collected was cancelled. The messages ask, in turn: what went wrong at the
+desk, from the log, with no code yet; the crash, with a test first; Riverside is closed on Mondays, so its 7-day pickup
+skips them; the whole day's diff, walked through file by file; every Riverside row the import could not match, with
+the reason; a report of waiting, ready and expired holds by title, run on Riverside's; no hold limit for staff
+accounts; every test by name, and how many; place_hold timed with 5,000 holds; and a last run of the tests, with where
+things stand for tomorrow's meeting.
+
+A subagent wrote the messages from their content given in Turkish, with no tools, as before. One sentence was cut from
+the fifth: it said some of Riverside's titles are not in the catalog, and none are. `OTHER` in seed.py was meant to put
+three such titles into Riverside's file, but all three are in shelf's catalog. This was found while the evening was
+written, after chain 2's afternoon had run on that file, so the file stays as it is and every chain reads the same.
+
+Why this evening:
+- **It reads more per call.** The afternoon added about 1,370 tokens of context a call. Half of the evening's
+  messages have the model read or print something long: the log, a diff of the whole day, every test's name, the
+  rows the import could not match, a report over all of Riverside's holds.
+- **Day 2 still needs none of it.** The selftest checks the log and the messages against the pattern of each of day
+  1's facts and rules, the count of 191 included, and finds none; and a day 2 done right, with the log in the
+  repository, still passes all ten checks.
+- **It is harder again for LR Memory.** Its nightly pass now reads 25 typed messages, and the evening adds standing
+  facts of its own, Riverside's closed Mondays and staff accounts without the hold limit, to compete with the
+  morning's for the six changes a pass can write. After the afternoon it wrote all six.
+
+Day 2 is unchanged, and LR Memory stays at 0.3.1. `run.py --job shelf --evening --chains 2 --arms N,L,R`, pointed at
+stage A's results folder, finds the afternoon kept there, resumes its session for the evening, keeps what the evening
+leaves in a folder of its own, and runs the three day-2 arms from it. A run with a stub in place of `claude` went
+through all of it: day 1, the afternoon, the evening, a nightly pass that read 25 messages, and the three day-2 rows.
+
+**Predicted, on chain 2:**
+- The evening makes 25 to 60 model calls (median 38) and ends with 110k to 190k tokens of context (median 140k), for
+  2.8M to 8M tokens (median 4.2M).
+- R's first call on day 2 carries the evening's last context and about 2,400 tokens more. R costs 8 to 10 times that
+  first context, as in chain 2 on both earlier days (9.9 and 8.4): 0.9M to 2.0M tokens (median 1.25M).
+- N and L cost 0.17M to 0.32M each (median 0.21M), L with its nightly pass, so L/R is 0.08 to 0.35 (median 0.17).
+- R passes F1 to F3 and both rules. Neither arm passes C3. L passes 2 or 3 of F1 to F3 and 1 or 2 of the rules; if it
+  loses one, it is most likely F3, the printer.
+- The stage costs about 5.9M tokens (4M to 10.6M).
+
+Day 2 runs whatever the evening's length: the evening costs more than day 2's three arms together, and each length is
+one more point on what a resume costs. Stop after day 2 if L uses more tokens than R or fails a check that R passes,
+and read what its nightly pass wrote first. Chains 1 and 3 would each take the afternoon and the evening, about 7.5M
+tokens a chain (5M to 14M), and are not part of this stage.
 
 ## Limits
 
