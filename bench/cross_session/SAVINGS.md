@@ -4,7 +4,8 @@ Claude Code alone has two ways to start the next day. A fresh session with its o
 that is this bench's arm N. Resuming yesterday's session remembers everything, because every call carries all of
 yesterday. The claim to test is that LR Memory gives what a resumed session remembers at what a fresh session costs.
 This file finds where the tokens go first, from records that already exist, then sets out the experiment with its
-predictions, written before any run, stage 1's result, and the long day designed after it.
+predictions, written before any run, stage 1's result, the long day designed after it, and how far its first stage
+went.
 
 ## Where the tokens go (no model tokens)
 
@@ -154,6 +155,23 @@ day 2 if L uses more tokens than R, and find out why first.
 The token side is mostly arithmetic once the afternoon's length is known: each of R's calls carries all of yesterday.
 What the run measures is the rest: how many calls each arm makes, and whether LR Memory keeps the morning's facts
 through a long afternoon when a resumed session has all of them in its context.
+
+## Stage A result (29 October 2026)
+
+Chain 2's afternoon answered all nine messages in 34 model calls and 1,752,355 tokens. Its last call carried 71,697
+tokens of context, against the 100k to 200k predicted, so the stop rule holds: L and R did not run, and the afternoon
+gets longer before anything else does. N's day 2 after it cost 196,851 tokens, with 0 of 4 memory checks and 0 of 2
+rules, as on the short day. The stage cost 1.95M tokens.
+
+Against the predictions:
+- 34 calls, against 35 to 80; 1.75M tokens, against 2M to 9M; N's day 2 at 0.197M, against 0.2M to 0.45M.
+- The context grew by about 1,370 tokens a call, from about 25k at the end of the morning: close to the 1,800 of the
+  long sessions on the working machine. What fell short is the number of calls, 34 here against a median 616 there.
+  The model built the holds, the import, the operation and the page in fewer steps than predicted.
+
+Since every call carries the context before it, a session's tokens grow with the square of its length. At 1,370
+tokens a call, an afternoon that ends at 150k takes about 90 calls and 8M tokens. Resuming this afternoon where it
+ended and taking it to 150k costs about 6M at the same rate, and about 3M if each call adds 3,000.
 
 ## Limits
 
