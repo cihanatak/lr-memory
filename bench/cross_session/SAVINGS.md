@@ -4,7 +4,7 @@ Claude Code alone has two ways to start the next day. A fresh session with its o
 that is this bench's arm N. Resuming yesterday's session remembers everything, because every call carries all of
 yesterday. The claim to test is that LR Memory gives what a resumed session remembers at what a fresh session costs.
 This file finds where the tokens go first, from records that already exist, then sets out the experiment with its
-predictions, written before any run.
+predictions, written before any run, and stage 1's result.
 
 ## Where the tokens go (no model tokens)
 
@@ -69,6 +69,40 @@ before stage 2. Stop also if L uses more tokens than R in 2 of 3 chains.
 
 **Over all 11 chains.** L uses fewer tokens than R in at least 9, with L's tokens a median 0.6 of R's (0.4–0.85).
 The finding to report is how many of R's memory checks L kept, and at what share of R's tokens.
+
+## Stage 1 result (29 October 2026)
+
+Shelf, 3 chains, 1,045,733 tokens. The N and L rows are the ones already run on the same day-1 records; L's tokens
+include its nightly pass.
+
+| | N | L 0.3.1 | R |
+| --- | --- | --- | --- |
+| Memory checks | 0 of 12 | 9 of 12 | 9 of 12 |
+| Rules kept | 2 of 6 | 6 of 6 | 6 of 6 |
+| Task checks | 8 of 12 | 10 of 12 | 10 of 12 |
+| Day 2 tokens, chains 1–3 | 212,052; 166,859; 217,605 | 201,255; 254,801; 270,269 | 562,940; 246,789; 236,004 |
+| Model calls | 11, 10, 12 | 10, 12, 13 | 15, 9, 9 |
+| First call's context | 14,125; 13,824; 13,824 | 15,443; 15,260; 15,191 | 31,425; 25,001; 23,607 |
+
+Against the predictions:
+- R's day 2 cost 0.56M, 0.25M and 0.24M (median 0.25M): none of the three in 0.27–0.45M.
+- R cost 2.65, 1.48 and 1.08 times N (median 1.48): at least 1.3 times by median, not in chain 3.
+- R passed 9 of 12 memory checks and 6 of 6 rules, as L did. No check came out differently for L and R in any chain.
+  Both failed C3: with day 1's complaint in its context, R's answers still had medians of 102 to 130 words.
+- L used fewer tokens than R in 1 chain of 3 (L/R 0.36, 1.03 and 1.15), not in at least 2. The stop rule holds, and
+  stage 2 does not run.
+- The stage cost 1.05M tokens, inside 0.8–1.4M.
+
+Why the resume was cheap: each of its calls carried 10,000 to 17,000 tokens more than a fresh session's (day 1's
+last context, less a fresh session's start), as the estimate assumed. But the estimate also assumed it would make as
+many calls as a fresh session. In chains 2 and 3, it made 9 calls against 10 to 13 and printed none of the source files
+again, since what it read of them on day 1 was still in its context; L's fresh sessions printed them again
+(`cat shelf/api.py` and the like). In chain 1, it made 15 calls and cost 2.8 times L.
+
+So on a day this short, Claude Code alone, resuming, remembers what LR Memory remembers, at about the same cost. A
+saving against a resume can only show where yesterday is long: on the working machine above, returns carried back a
+median 447k tokens, 18 times shelf's day 1. Measuring it needs a day 1 that leaves that much context, with all three
+arms run again on it.
 
 ## Limits
 
