@@ -5,7 +5,7 @@ that is this bench's arm N. Resuming yesterday's session remembers everything, b
 yesterday. The claim to test is that LR Memory gives what a resumed session remembers at what a fresh session costs.
 This file finds where the tokens go first, from records that already exist, then sets out the experiment with its
 predictions, written before any run, stage 1's result, the long day designed after it, how far its first stage went,
-and the evening designed after that, with its result.
+the evening designed after that, with its result, and the two other chains run through it.
 
 ## Where the tokens go (no model tokens)
 
@@ -327,6 +327,51 @@ mornings. At chain 2's rates, each chain costs about 6.6M tokens. Predicted:
 
 Stop a chain if a part of its day 1 leaves a turn unanswered. After day 2, if L uses more tokens than R or fails a
 check that R passes, read what its nightly pass wrote first.
+
+## Chains 1 and 3 result (29 October 2026)
+
+Both chains answered every turn of the afternoon and the evening, and the two cost 10,735,371 tokens. Over the three
+chains, after the evening:
+
+| After the evening, chains 1–3 | N | L 0.3.1 | R |
+| --- | --- | --- | --- |
+| Memory checks | 1 of 12 | 9 of 12 | 9 of 12 |
+| Rules kept | 2 of 6 | 6 of 6 | 6 of 6 |
+| Task checks | 11 of 12 | 12 of 12 | 12 of 12 |
+| Day 2 tokens | 216,713; 311,666; 294,088 | 266,531; 241,448; 203,926 | 1,090,033; 1,452,246; 970,057 |
+| Model calls | 11, 15, 15 | 11, 11, 9 | 9, 11, 9 |
+| First call's context | 14,257; 13,962; 13,964 | 15,612; 15,570; 15,563 | 116,311; 125,038; 103,590 |
+
+Against the predictions:
+- Day 1 ended at 114,307 and 102,341 tokens of context, inside 90k to 170k and under the median of 120k. The
+  afternoon and the evening made 56 and 55 calls, inside 45 to 110 and under the median of 62.
+- R cost 1.09M and 0.97M, inside 0.8M to 3M and under the median of 1.4M. L cost 0.27M and 0.20M with its nightly
+  pass, inside 0.18M to 0.32M, and N 0.22M and 0.29M, inside 0.2M to 0.4M.
+- L used fewer tokens than R in 3 of 3 chains, with L/R 0.24, 0.17 and 0.21: a median of 0.21, against 0.17
+  predicted, inside 0.08 to 0.35.
+- Memory checks: L 9 of 12 and R 9 of 12, the top of what was predicted, and N 1 of 12, that one by recomputing
+  (above). Rules: L and R 6 of 6, N 2 of 6. Neither L nor R passed C3.
+- Paired over the three chains and the six memory and rule checks, L and R never differed, against at most once and
+  0 to 2 times predicted. Each passed 12 where N failed, and N none where they failed (two-sided sign test p = 0.0005).
+- The two chains cost 10.7M tokens, inside 9M to 22M.
+
+N's two rules in chain 1 came from Claude Code's own memory: on chain 1's morning, the model wrote the two rules and
+the complaint about long summaries into its memory folder, as in stage 1. LR Memory's nightly pass, which writes to
+the same folder, found them there in that chain, updated the summaries file and added four facts: the fee, the
+printer, the pickup window with Riverside's Mondays, and the hold limit.
+
+**What the tokens cost.** About 99% of R's tokens were cache reads, which the API prices at a tenth of fresh input.
+Weighted as the API prices them (fresh input 1, a cache write 1.25, a cache read 0.1, output 5), with L's nightly pass
+priced as if it ran on the same model rather than the smaller one it used, L cost 0.54, 0.36 and 0.51 of R. That is
+with R's cache warm, since day 2 ran within minutes of the evening. A day later, R's first call would write into the
+cache what it here read from it; priced that way, L cost 0.26, 0.20 and 0.25 of R.
+
+**So far.** On shelf, LR Memory kept what a resumed session kept: the same checks passed in each of the three chains
+after the evening, and in chain 2 at each of three lengths of day 1. Its day 2 did not grow with day 1, at 0.20M to
+0.27M tokens, while a resume's did, to 0.97M to 1.45M after a day 1 that ended at 102k to 122k tokens of context:
+0.17 to 0.24 of R in tokens, 0.20 to 0.26 priced with a cold cache, and 0.36 to 0.54 with a warm one. Claude Code
+alone in a fresh session kept 1 of 12 facts, that one by recomputing, and 2 of 6 rules. All of it is one job, written
+for this bench, in three chains.
 
 ## Limits
 
