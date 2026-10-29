@@ -189,6 +189,32 @@ the short day and a long one. Predicted, on chain 2:
 If L keeps F1 to F3 and both rules, the afternoon gets longer next, designed with its predictions before any run. If
 it loses any, what its nightly pass wrote is read first.
 
+**Result.** L kept every morning fact and both rules through the afternoon, at 0.31 of R's tokens.
+
+| Chain 2, after the long afternoon | N | L 0.3.1 | R |
+| --- | --- | --- | --- |
+| Memory checks | 0 of 4 | 3 of 4 | 3 of 4 |
+| Rules kept | 0 of 2 | 2 of 2 | 2 of 2 |
+| Task checks | 3 of 4 | 4 of 4 | 4 of 4 |
+| Day 2 tokens | 196,851 | 191,618 | 622,146 |
+| Model calls | 11 | 9 | 8 |
+| First call's context | 13,936 | 15,487 | 74,094 |
+
+Against the predictions:
+- R cost 0.62M, inside 0.55M to 1.3M, in 8 calls against 9 to 15; its first call carried 74,094, just above 71k to
+  74k. It passed F1 to F3 and both rules.
+- L cost 191,618 with its nightly pass, just under 0.2M to 0.4M, and passed F1 to F3 and both rules, the top of what
+  was predicted. Its nightly pass read all 15 messages and wrote six files, its limit: the two rules, the short
+  summaries, the fee, the printer, and the afternoon's two limits together in one.
+- L/R was 0.31, inside 0.15 to 0.7. No check came out differently for L and R; neither passed C3.
+- The two runs cost 0.81M tokens, inside 0.8M to 1.6M.
+
+With day 1 about three times as long (a last context of 71,697 against about 24,500), R's day 2 cost 2.5 times what
+it cost after the short day (622,146 against 246,789), and L's did not grow (191,618 against 254,801). A resume's
+cost follows yesterday's length; a fresh session's does not. Of R's tokens, 98.5% were cache reads, which cost a tenth
+of fresh input, and its cache was warm, since day 2 ran within the hour after day 1. A day later, its first call would
+write all of day 1 into the cache again.
+
 ## Limits
 
 - Day 1 here is short. On a real day, the context carried back is more than ten times larger, and so should be the
