@@ -5,7 +5,7 @@ that is this bench's arm N. Resuming yesterday's session remembers everything, b
 yesterday. The claim to test is that LR Memory gives what a resumed session remembers at what a fresh session costs.
 This file finds where the tokens go first, from records that already exist, then sets out the experiment with its
 predictions, written before any run, stage 1's result, the long day designed after it, how far its first stage went,
-and the evening designed after that.
+and the evening designed after that, with its result.
 
 ## Where the tokens go (no model tokens)
 
@@ -267,10 +267,71 @@ one more point on what a resume costs. Stop after day 2 if L uses more tokens th
 and read what its nightly pass wrote first. Chains 1 and 3 would each take the afternoon and the evening, about 7.5M
 tokens a chain (5M to 14M), and are not part of this stage.
 
+## Evening result (29 October 2026)
+
+The evening answered all ten messages in 28 model calls and 2,837,682 tokens, and its last call carried 121,649 tokens
+of context. On day 2 after it, L kept every morning fact and both rules again, at 0.17 of R's tokens. The stage cost
+4,843,042 tokens.
+
+| Chain 2, after the evening | N | L 0.3.1 | R |
+| --- | --- | --- | --- |
+| Memory checks | 1 of 4 | 3 of 4 | 3 of 4 |
+| Rules kept | 0 of 2 | 2 of 2 | 2 of 2 |
+| Task checks | 4 of 4 | 4 of 4 | 4 of 4 |
+| Day 2 tokens | 311,666 | 241,448 | 1,452,246 |
+| Model calls | 15 | 11 | 11 |
+| First call's context | 13,962 | 15,570 | 125,038 |
+
+Against the predictions:
+- The evening made 28 calls, inside 25 to 60, and ended at 121,649, inside 110k to 190k but under the median of 140k;
+  its 2.84M tokens are at the bottom of 2.8M to 8M. The context grew by about 1,780 tokens a call, against 1,370 in
+  the afternoon and 1,800 on the working machine. What fell short again is the number of calls.
+- R cost 1.45M, inside 0.9M to 2.0M, but 11.6 times its first call's context, not 8 to 10: it made 11 calls, against 8
+  after the afternoon. It passed F1 to F3 and both rules.
+- L cost 241,448 with its nightly pass (7,080 of it), inside 0.17M to 0.32M, and passed F1 to F3 and both rules, the
+  top of what was predicted. Its nightly pass read all 25 messages and again wrote six files, its limit. It put the
+  evening's two facts, Riverside's closed Mondays and staff accounts without the limit, into the file that held the
+  afternoon's two limits, so the morning's facts kept their places.
+- L/R was 0.17, the predicted median. No check came out differently for L and R; neither passed C3.
+- N cost 311,666, inside 0.17M to 0.32M. Its one memory check, F2, it passed without remembering: it wrote that
+  yesterday's number was recorded nowhere, then noted that the same catalog gives 191 bad ISBNs without the cleanup's
+  normalization, and the check finds 191 in the file.
+- The stage cost 4.84M tokens, inside 4M to 10.6M.
+
+Over the three lengths of chain 2's day 1:
+
+| Day 2 tokens, with day 1 ending at | about 24,500 | 71,697 | 121,649 |
+| --- | --- | --- | --- |
+| N | 166,859 | 196,851 | 311,666 |
+| L 0.3.1, with its nightly pass | 254,801 | 191,618 | 241,448 |
+| R | 246,789 | 622,146 | 1,452,246 |
+| L/R | 1.03 | 0.31 | 0.17 |
+
+R's day 2 grew 5.9 times from the short day to the evening, while L's stayed between 0.19M and 0.26M, and at every
+length L and R passed the same checks. N's grew from 0.17M to 0.31M: a fresh session reads more of a larger
+repository. Of R's tokens, 98.9% were cache reads, with a warm cache, as after the afternoon. On the working machine, a
+return carries back a median 447k tokens, 3.7 times the evening. All of this is one chain.
+
+**Chains 1 and 3 (written 29 October 2026, before any run).** The same afternoon and evening, then the three day-2
+arms: `run.py --job shelf --evening --chains 1,3 --arms N,L,R` in stage 1's results folder, which holds both chains'
+mornings. At chain 2's rates, each chain costs about 6.6M tokens. Predicted:
+- Each chain's day 1 ends at 90k to 170k tokens of context (median 120k); its afternoon and evening make 45 to 110
+  calls together (median 62).
+- On day 2, R costs 0.8M to 3M a chain (median 1.4M), L 0.18M to 0.32M with its nightly pass, N 0.2M to 0.4M.
+- Over the three chains, L uses fewer tokens than R in 3 of 3, with L/R a median 0.17 (0.08 to 0.35).
+- Memory checks: R 8 or 9 of 12, L 7 to 9 of 12 (median 9), N 0 to 3 of 12. Rules: R 6 of 6, L 5 or 6 of 6, N 0 to 2
+  of 6. Neither L nor R passes C3.
+- Paired over the three chains and the six memory and rule checks, L passes where R fails at most once, and R where
+  L fails 0 to 2 times (median 0).
+- The two chains cost about 13M tokens (9M to 22M).
+
+Stop a chain if a part of its day 1 leaves a turn unanswered. After day 2, if L uses more tokens than R or fails a
+check that R passes, read what its nightly pass wrote first.
+
 ## Limits
 
-- Day 1 here is short. On a real day, the context carried back is more than ten times larger, and so should be the
-  saving; this bench does not measure that.
+- Day 1 here ends at 121,649 tokens of context at the longest. On the working machine, a return carries back a median
+  447k, 3.7 times as much, and the saving there should be larger; this bench does not measure it.
 - In money, a cache read costs a tenth of fresh input, so a resume costs less than its tokens suggest. The bench
   reports tokens, with their kinds.
 - 11 chains in three jobs, all written for this bench.
