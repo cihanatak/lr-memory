@@ -10,7 +10,8 @@
 
 --job kargo runs the second job instead of ledgerly's: a Turkish shop's shipping module, in kargo/. --job shelf runs
 the third: a community library's circulation software, in shelf/. --arms R adds a day 2 with Claude Code alone that
-resumes day 1's session (SAVINGS.md).
+resumes day 1's session (SAVINGS.md). --long runs each chain's day 1 on into a long afternoon first, resuming its
+session, and day 2 then starts from what the afternoon left; shelf has one (SAVINGS.md).
 
 Day 2 runs in day 1's folder with day 1's config folder, so Claude Code's own memory carries over as it does on a
 user's machine; the arms of a chain take turns, each from a fresh copy of what day 1 left. A second run with the same
@@ -31,6 +32,7 @@ import sys
 import tempfile
 import threading
 import time
+from datetime import datetime, timezone
 from math import comb
 from pathlib import Path
 
@@ -72,15 +74,15 @@ def version() -> str:
 
 
 def column(row: dict) -> str:
-    """A day-2 row's column in the tables: the arm, and for LR Memory its version, and whether its nightly pass ran."""
-    if row["arm"] != "L":
-        return row["arm"]
-    return f"L {row['version']}" + (" no sleep" if row.get("no_sleep") else "")
+    """A day-2 row's column in the tables: the arm, for LR Memory its version and whether its nightly pass ran, and
+    whether day 1 ran on into the long afternoon."""
+    name = row["arm"] if row["arm"] != "L" else f"L {row['version']}" + (" no sleep" if row.get("no_sleep") else "")
+    return name + (" long" if row.get("long") else "")
 
 
 def tag(row: dict) -> str:
     """The same, as part of a file name."""
-    return column(row).replace(" no sleep", "-nosleep").replace(" ", "")
+    return column(row).replace(" no sleep", "-nosleep").replace(" long", "-long").replace(" ", "")
 
 
 def cued(base: Path) -> list:
@@ -130,13 +132,26 @@ def typed(projects: Path) -> int:
                     content = (row.get("message") or {}).get("content")
                     text = content if isinstance(content, str) else "".join(
                         b.get("text", "") for b in content or [] if isinstance(b, dict))
-                    if text.strip() in days.DAY1:
+                    if text.strip() in days.DAY1 + getattr(days, "AFTERNOON", ()):
                         origin["kind"] = "human"
                 changed += 1
             rows.append(json.dumps(row, ensure_ascii=False))
         with open(path, "w", encoding="utf-8", newline="\n") as f:
             f.write("\n".join(rows) + "\n")
     return changed
+
+
+def since_day_one(projects: Path) -> float:
+    """Hours since day 1 began, and one more. On a user's machine the nightly pass reads everything since the last
+    pass; here each arm L starts with no pass behind it, and a first pass reads back only a day, which would miss a
+    day 1 run longer ago than that."""
+    began = []
+    for path in projects.glob("*/*.jsonl"):
+        with open(path, encoding="utf-8") as f:
+            found = next((m for m in map(re.compile(r'"timestamp":\s*"([^"]+)"').search, f) if m), None)
+        if found:
+            began.append(datetime.fromisoformat(found.group(1).replace("Z", "+00:00")))
+    return (datetime.now(timezone.utc) - min(began)).total_seconds() / 3600 + 1 if began else 24
 
 
 def sleep_pass(base: Path, env: dict, claude: str, args) -> dict:
@@ -147,8 +162,9 @@ def sleep_pass(base: Path, env: dict, claude: str, args) -> dict:
     if wait > 0:
         time.sleep(wait)
     e = dict(env, LR_MEMORY_CLAUDE=claude, LR_MEMORY_SLEEP_MODEL=args.sleep_model)
-    r = subprocess.run([sys.executable, str(LRM / "scripts" / "lrm.py"), "sleep"], cwd=base, env=e, capture_output=True,
-                       text=True, encoding="utf-8", errors="replace", timeout=1800,
+    hours = f"{since_day_one(base / 'config' / 'projects'):.2f}"
+    r = subprocess.run([sys.executable, str(LRM / "scripts" / "lrm.py"), "sleep", "--hours", hours], cwd=base, env=e,
+                       capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=1800,
                        creationflags=getattr(subprocess, "BELOW_NORMAL_PRIORITY_CLASS", 0))
     report = (r.stdout + "\n" + r.stderr).strip()
     return {"code": r.returncode, "tokens": tokens_of(report), "read": messages_read(report), "report": report[-3000:]}
@@ -207,6 +223,40 @@ def day_one(i: int, base: Path, args, claude: str, env: dict, out: Path) -> dict
     return row
 
 
+def long_day(i: int, base: Path, day1: dict, args, claude: str, env: dict, out: Path) -> dict:
+    """Day 1 runs on into the afternoon: the files the user put in over lunch are committed, and day 1's session is
+    resumed in its own folder with the afternoon's messages. When every turn ended, what it left is kept for day 2."""
+    for name in ("work", "config", "lrdata"):
+        if (base / name).exists():
+            lr_run.repo.remove(base / name)
+    for name in ("work", "config"):
+        shutil.copytree(base / "day1" / name, base / name)
+    work, given = base / "work", checks.afternoon_files()
+    for rel, text in given.items():
+        (work / rel).parent.mkdir(parents=True, exist_ok=True)
+        with open(work / rel, "w", encoding="utf-8", newline="\n") as f:
+            f.write(text)
+    lr_run.repo.git(work, "add", *given)
+    lr_run.repo.git(work, "commit", "-q", "-m", "Add the holds spec and Riverside's holds", "--", *given)
+    morning = max((base / "config" / "projects").glob("*/*.jsonl"), key=lambda p: p.stat().st_mtime)
+    row = {"chain": i, "day": 1, "long": True, "start": day1["start"], "baseline": day1["baseline"]}
+    began = time.time()
+    events, turns = lr_run.session(lr_run.command(claude, args, "1M", False) + ["--resume", morning.stem], work,
+                                   lr_run.child(env, base, False), days.AFTERNOON, args.turn_timeout,
+                                   out / "streams" / f"c{i}-afternoon.stderr")
+    lr_run.save(out, f"c{i}-afternoon", events)
+    m = lr_run.metrics(events)
+    row.update(turns=turns, seconds=round(time.time() - began), tokens=m["tokens"], calls=m["calls"],
+               last=(m["context"] or [0])[-1], words=[checks.words(t) for _, t in sorted(finals(events).items())],
+               memory=memory(base), state=checks.state(work, day1["start"], day1["baseline"], given))
+    row["ok"] = len(turns) == len(days.AFTERNOON) and all(t["status"] == "ok" for t in turns)
+    if row["ok"]:
+        for name in ("work", "config"):
+            shutil.copytree(base / name, base / "day1long" / name)
+    write(out, "day1.jsonl", row)
+    return row
+
+
 def day_two(i: int, arm: str, base: Path, day1: dict, args, claude: str, env: dict, out: Path) -> dict:
     """Day 2 from a fresh copy of what day 1 left: with Claude Code alone (N), or with LR Memory (L), whose nightly
     pass runs first unless --no-sleep, or with Claude Code alone resuming day 1's session (R), its own way to keep
@@ -216,11 +266,11 @@ def day_two(i: int, arm: str, base: Path, day1: dict, args, claude: str, env: di
         if (base / name).exists():
             lr_run.repo.remove(base / name)
     for name in ("work", "config"):
-        shutil.copytree(base / "day1" / name, base / name)
+        shutil.copytree(base / ("day1long" if day1.get("long") else "day1") / name, base / name)
     e = lr_run.child(env, base, lr)
     if lr:
         e["LR_MEMORY_LANG"] = getattr(days, "LANG", "en")
-    row = {"chain": i, "day": 2, "arm": arm}
+    row = {"chain": i, "day": 2, "arm": arm, **({"long": True} if day1.get("long") else {})}
     try:
         if lr:
             row["version"] = version()
@@ -255,14 +305,21 @@ def day_two(i: int, arm: str, base: Path, day1: dict, args, claude: str, env: di
 def chain(i: int, arms: list, args, out: Path) -> None:
     base = out / "chains" / f"c{i}"
     done = {column(r) for r in rows_of(out, "results.jsonl") if r.get("chain") == i and "error" not in r and "arm" in r}
-    arms = [a for a in arms if column({"arm": a, "version": version(), "no_sleep": args.no_sleep}) not in done]
+    arms = [a for a in arms if column({"arm": a, "version": version(), "no_sleep": args.no_sleep, "long": args.long})
+            not in done]
     if not arms:
         return
     try:
         claude, env = lr_run.environment(args)
-        day1 = next((r for r in reversed(rows_of(out, "day1.jsonl")) if r["chain"] == i and r.get("ok")), None)
+        found = {bool(r.get("long")): r for r in rows_of(out, "day1.jsonl") if r["chain"] == i and r.get("ok")}
+        day1 = found.get(False)
         if day1 is None or not (base / "day1").is_dir():
             day1 = day_one(i, base, args, claude, env, out)
+            if not day1["ok"]:
+                return
+        if args.long:
+            day1 = (found.get(True) if (base / "day1long").is_dir() else None) or long_day(i, base, day1, args, claude,
+                                                                                           env, out)
             if not day1["ok"]:
                 return
         for arm in arms if i % 2 else arms[::-1]:  # the arms take turns going first
@@ -280,9 +337,10 @@ def progress(row: dict) -> str:
     if "error" in row:
         return f"c{row['chain']}{'-' + row['arm'] if row.get('arm') else ''}: {row['error']}"
     if row.get("day") == 1:
-        return (f"c{row['chain']} day 1: {'ok' if row['ok'] else 'turns ' + str(row['turns'])}, {row['tokens']:,} "
-                f"tokens, {row['seconds']} s, memory files {sorted(row['memory'])}, leaks "
-                f"{[k for k, v in row['state']['leaks'].items() if v]}")
+        return (f"c{row['chain']} {'afternoon' if row.get('long') else 'day 1'}: "
+                f"{'ok' if row['ok'] else 'turns ' + str(row['turns'])}, {row['tokens']:,} tokens, {row['calls']} calls"
+                + (f", last context {row['last']:,}" if "last" in row else "") + f", {row['seconds']} s, memory files "
+                f"{sorted(row['memory'])}, leaks {[k for k, v in row['state']['leaks'].items() if v]}")
     sleep = row.get("sleep") or {}
     return (f"c{row['chain']} day 2 {column(row)}: memory {row['memory']}/{row['of_memory']}, rules {row['rules']}/"
             f"{len(checks.RULES)}, task {row['task']}/{len(checks.TASK)}, {row['tokens']:,} tokens" + (f" + sleep {sleep.get('tokens', 0):,} (read "
@@ -306,7 +364,9 @@ def summary(rows: list, day1: list) -> str:
     arms = sorted({column(r) for r in rows}, key=lambda c: (c != "N", c))  # N, then each LR Memory version
     med = lambda xs: statistics.median(xs) if xs else 0  # noqa: E731
     by = {a: [r for r in rows if column(r) == a] for a in arms}
-    head = ["| | " + " | ".join(f"{a}: {ARMS[a[0]]}{a[1:]}" for a in arms) + " |", "| --- |" + " --- |" * len(arms)]
+    head = ["| | " + " | ".join(f"{a}: {ARMS[a[0]]}{a[1:].replace(' long', '')}" + (", after the long afternoon"
+                                                                                     if a.endswith(" long") else "")
+                                for a in arms) + " |", "| --- |" + " --- |" * len(arms)]
     lines = [("Chains", [str(len(by[a])) for a in arms])]
     for k in checks.CHECKS:
         lines.append((k, [f"{sum(r['checks'][k][0] is True for r in by[a])} of "
@@ -330,18 +390,20 @@ def summary(rows: list, day1: list) -> str:
     for r in rows:
         for k in checks.MEMORY + checks.RULES:
             pairs[(r["chain"], k)][column(r)] = r["checks"][k][0]
-    for a in arms if "N" in arms else []:
-        both = [v for v in pairs.values() if a != "N" and v.get("N") is not None and v.get(a) is not None]
+    for a in arms:
+        n = "N long" if a.endswith(" long") else "N"  # each arm against Claude Code alone after the same day 1
+        both = [v for v in pairs.values() if a != n and v.get(n) is not None and v.get(a) is not None]
         if both:
-            wins = sum(not v["N"] and v[a] for v in both)
-            losses = sum(v["N"] and not v[a] for v in both)
+            wins = sum(not v[n] and v[a] for v in both)
+            losses = sum(v[n] and not v[a] for v in both)
             out += ["", f"Paired over chains and the {len(checks.MEMORY + checks.RULES)} memory and rule checks: {a} "
-                        f"passed where N failed {wins} "
+                        f"passed where {n} failed {wins} "
                         f"times, and the other way round {losses} times; two-sided sign test "
                         f"p = {sign_test(wins, losses):.3f}."]
     for r in day1:
-        out.append(f"Day 1 of chain {r['chain']}: {r['tokens']:,} tokens, words per answer {r['words']}, memory files "
-                   f"{sorted(r['memory'])}, written into the repository: "
+        out.append(f"{'The afternoon' if r.get('long') else 'Day 1'} of chain {r['chain']}: {r['tokens']:,} tokens"
+                   + (f", last context {r['last']:,}" if "last" in r else "") + f", words per answer {r['words']}, "
+                   f"memory files {sorted(r['memory'])}, written into the repository: "
                    f"{[k for k, v in r['state']['leaks'].items() if v] or 'none'}")
     return "\n".join(out)
 
@@ -354,6 +416,7 @@ def main() -> int:
     ap.add_argument("--n", type=int, default=3, help="chains")
     ap.add_argument("--chains", default="", help="these chains only, such as 2,3,5")
     ap.add_argument("--no-sleep", action="store_true", help="arm L without LR Memory's nightly pass")
+    ap.add_argument("--long", action="store_true", help="day 1 runs on into a long afternoon before day 2")
     ap.add_argument("--arms", default="N,L")
     ap.add_argument("--model", default="claude-sonnet-5-5[1m]")
     ap.add_argument("--sleep-model", default="claude-sonnet-5-5")
@@ -366,6 +429,8 @@ def main() -> int:
     ap.add_argument("--summary", default="", help="print the tables of a results folder")
     args = ap.parse_args()
     use(args.job)
+    if args.long and not getattr(days, "AFTERNOON", None):
+        ap.error(f"the {args.job} job has no long afternoon")
     if args.selftest:
         return selfcheck.selftest(sys.modules[__name__])
     if args.summary:

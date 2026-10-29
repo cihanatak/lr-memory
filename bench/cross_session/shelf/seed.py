@@ -12,6 +12,7 @@ import csv
 import io
 import random
 import unicodedata
+from datetime import datetime, timedelta
 
 BOOKS = [  # title, author ("" for an anonymous work), year, Dewey class
     ("Middlemarch", "George Eliot", 1871, "823.8"), ("Bleak House", "Charles Dickens", 1853, "823.8"),
@@ -515,3 +516,159 @@ def test_an_unknown_copy_or_operation():
 def files() -> dict:
     """Every file of the repository, by path."""
     return {**FILES, "data/catalog.csv": catalog_csv()}
+
+
+HOLDS_SPEC = """\n# Holds: Working Group Specification
+
+**Harbour Lane Community Library - Circulation Working Group**
+
+Version 3. Agreed at the working group meeting, after comments from the desk volunteers on the earlier drafts. Two
+questions are still open and are listed in section 7. The rules in section 3 are numbered H1 to H9 so that the code,
+the tests and the desk notes can all point to the same rule.
+
+## 1. Purpose
+
+We want a member who finds every copy of a title out on loan to be able to join a queue for it, instead of coming back
+to check again. The library keeps the member's place, sets a returned copy aside when their turn comes, and tells the
+desk who is waiting for what.
+
+In this document a **title** means all copies in the catalog that have the same title and the same author. Copies of
+one title can differ in year or shelf number. For holds they are interchangeable: any copy of the title can fill a
+hold on that title.
+
+The people using this are members, who ask for holds, and the volunteers and staff at the desk, who place them, hand
+over copies and answer questions. Whatever the system does, a volunteer should be able to explain it to a member in a
+sentence or two.
+
+## 2. Terms
+
+- **Hold**: a member's request for the next available copy of a title. A hold belongs to one member and one title.
+- **Queue**: the holds on one title that are still waiting for a copy, in the order they were placed. Every title has
+  its own queue, and a hold in it has the status *waiting*.
+- **Ready**: a copy has been set aside on the hold shelf for the member at the front of the queue. The hold leaves the
+  queue and its status becomes *ready*.
+- **Collected**: the member has picked up the copy that was set aside for them.
+- **Cancelled**: the member withdrew the hold.
+- **Expired**: the hold ended because a ready copy was not collected in time. How long "in time" is has not been
+  decided (section 7).
+
+## 3. Rules
+
+**H1. Placing a hold.** A member may place a hold on a title that has at least one copy in the catalog but no copy on
+the shelf right now. A copy that has been set aside for a ready hold does not count as being on the shelf. If a copy
+is on the shelf, no hold is created; the system says that the copy is on the shelf instead.
+
+**H2. Order.** The queue moves in the order the holds were placed: first come, first served. A member's place depends
+on when the hold was placed and on nothing else.
+
+**H3. Holds a member cannot place.** A member cannot place a hold on a title if they already have a copy of that title
+on loan. A member also cannot place a hold on a title while an earlier hold of theirs on the same title is still
+waiting or ready. A member may hold several different titles at the same time; the overall number is one of the open
+questions in section 7.
+
+**H4. Returns.** When a copy is returned and its title has waiting holds, the copy does not go back on the shelf. It
+is set aside for the member at the front of the queue, that member's hold becomes ready, and the member must be told.
+How the news is sent is not the subject of this document (section 6). What must be recorded is who has to be told and
+when: the member number and the moment the hold became ready, both of which are kept on the hold. If several copies of
+a title come back, each one goes to the next waiting member in turn. If nobody is waiting, a returned copy goes back
+on the shelf as usual.
+
+**H5. Renewals.** A loan cannot be renewed while its title has a waiting hold. The renewal is refused, and the member
+is told that other members are waiting for the title.
+
+**H6. Cancelling.** A member can cancel a hold at any time. Cancelling a waiting hold removes it from the queue, and
+everyone behind it moves up. Cancelling a ready hold releases the copy that was set aside: it goes to the next member
+in the queue, whose hold becomes ready, and if the queue is empty it goes back on the shelf.
+
+**H7. Collecting.** When the member picks up the copy that was set aside, the hold becomes collected and an ordinary
+loan begins.
+
+**H8. Members with overdue loans.** A member who has an overdue loan may still place holds. We decided this on
+purpose, so as not to push members away from the library. Please do not add a check that blocks them. Placing a hold
+does not depend on the state of the member's other loans.
+
+**H9. Morning list.** Every morning the desk can get the list of ready holds: member number, title, and since when
+each one has been ready. Volunteers use it to see which members have a copy waiting for them.
+
+Apart from H4 and H5, ordinary loans, returns and renewals keep working as they do today.
+
+## 4. Data
+
+Holds are stored in one file, `data/holds.json`. Each hold is one record with these fields:
+
+- `id`: a number that identifies the hold, given when it is placed and never reused.
+- `member`: the member number.
+- `title` and `author`: the title being held, as the catalog has them.
+- `placed_at`: the date and time the hold was placed. The queue order in H2 comes from this field.
+- `status`: one of waiting, ready, collected, cancelled, expired.
+- `ready_at`: the date and time the hold became ready. Empty until then.
+- `copy_barcode`: the barcode of the copy set aside. Empty until the hold is ready.
+
+A hold that has ended (collected, cancelled or expired) stays in the file with its final status, so the desk can look
+back at what happened.
+
+## 5. Examples
+
+A title has two copies and both are on loan. Member 20417 places a hold on Monday and member 20532 places one on
+Tuesday. While both are waiting, neither loan can be renewed (H5).
+
+On Wednesday one copy comes back. It is not shelved: it is set aside for 20417, whose hold becomes ready and appears
+on Thursday morning's list (H9). Member 20532 is still waiting, so the other loan still cannot be renewed.
+
+If 20417 then cancels, the copy goes to 20532 and that hold becomes ready (H6). Nobody is waiting any more, so the
+remaining loan can be renewed again. If 20532 cancels instead, 20417 keeps the copy that was set aside, and the
+remaining loan can be renewed because nobody is waiting.
+
+## 6. Out of scope
+
+- Sending notifications to members, by any means. H4 only requires that the system records who is to be told and when.
+- Moving copies between branches. Holds in this version are filled from the copies already in the catalog.
+
+## 7. Open questions
+
+Two numbers are not settled. We will take both to the front desk team and update this document once there is an
+answer.
+
+1. How many days a ready copy waits on the hold shelf before its hold expires.
+2. How many holds (waiting or ready) one member may have at the same time.
+
+This document gives no number for either, and the code should not assume one. If a stand-in is needed in the meantime,
+keep it in one clearly named place so it is easy to change.
+"""  # the working group's spec, as a subagent wrote it
+
+OTHER = [("The Remains of the Day", "Kazuo Ishiguro"), ("Beloved", "Toni Morrison"),
+         ("Never Let Me Go", "Kazuo Ishiguro")]  # held at Riverside, not in shelf's catalog
+STATES = ("waiting",) * 5 + ("on shelf", "collected", "withdrawn")  # Riverside's words for a hold's state
+
+
+def riverside_csv() -> str:
+    """The Riverside branch's holds as their own system exports them: semicolons, day-first dates, their own words for
+    a hold's state, and the slips of a list kept by hand, such as stray spaces, a title in lower case, an author left
+    out, a row entered twice, and a few titles shelf does not hold."""
+    rng = random.Random(2611)
+    wanted = rng.sample(BOOKS, 12)  # most holds are for a dozen titles
+    out = io.StringIO()
+    w = csv.writer(out, delimiter=";", lineterminator="\n")
+    w.writerow(["member", "title", "author", "placed", "status"])
+    row = None
+    for _ in range(320):
+        if row and rng.random() < 0.03:
+            w.writerow(row)
+            continue
+        if rng.random() < 0.03:
+            title, author = rng.choice(OTHER)
+        else:
+            title, author = (rng.choice(wanted) if rng.random() < 0.7 else rng.choice(BOOKS))[:2]
+        slip = rng.random()
+        title = title.lower() if slip < 0.05 else f" {title} " if slip < 0.1 else title
+        author = "" if author and rng.random() < 0.03 else author
+        placed = datetime(2026, 8, 1, 9) + timedelta(minutes=rng.randrange(88 * 24 * 60))
+        row = [f"R-{rng.randint(1000, 1180)}", title, author, placed.strftime("%d.%m.%Y %H:%M"), rng.choice(STATES)]
+        w.writerow(row)
+    return out.getvalue()
+
+
+def afternoon_files() -> dict:
+    """What the user put into the repository over lunch on the long day (../SAVINGS.md): the working group's spec
+    for holds, and the Riverside branch's holds."""
+    return {"docs/holds_spec.md": HOLDS_SPEC, "data/riverside_holds.csv": riverside_csv()}

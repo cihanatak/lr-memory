@@ -4,7 +4,7 @@ Claude Code alone has two ways to start the next day. A fresh session with its o
 that is this bench's arm N. Resuming yesterday's session remembers everything, because every call carries all of
 yesterday. The claim to test is that LR Memory gives what a resumed session remembers at what a fresh session costs.
 This file finds where the tokens go first, from records that already exist, then sets out the experiment with its
-predictions, written before any run, and stage 1's result.
+predictions, written before any run, stage 1's result, and the long day designed after it.
 
 ## Where the tokens go (no model tokens)
 
@@ -104,6 +104,57 @@ saving against a resume can only show where yesterday is long: on the working ma
 median 447k tokens, 18 times shelf's day 1. Measuring it needs a day 1 that leaves that much context, with all three
 arms run again on it.
 
+## The long day (designed 29 October 2026, before any run)
+
+Each shelf chain's day 1 runs on into an afternoon. The user comes back after lunch, and day 1's own session is
+resumed with nine more messages ([shelf/days.py](shelf/days.py)). They build holds (reservations) end to end from a
+spec by the library's circulation working group, which the user put into the repository over lunch, together with
+the Riverside branch's holds ([shelf/seed.py](shelf/seed.py)): a plan, the core and its tests, returns and renewals, two
+limits the front desk set (the hold shelf takes 7 days of pickups; at most 5 holds a member), an import of Riverside's
+holds, a count from it, an operation in api.py, a page for the volunteers, and a last run of the tests. A subagent wrote the messages and the spec from their content given in Turkish, with no tools, as for day 1.
+Day 2 is unchanged: the same three messages and the same ten checks. LR Memory stays at 0.3.1.
+
+Why this afternoon:
+- **It grows the way long sessions grow.** On the working machine, the sessions whose context passed 150k in those 7
+  days (12 of them) gained a median 1,800 tokens a call over a median 616 calls; what they carried was mostly shell
+  commands and their output, and files written and read. The afternoon is that kind of work, not one large file read
+  once.
+- **Day 2 needs none of it.** The afternoon repeats none of day 1's facts or rules (the selftest checks the spec and the
+  messages against the pattern of each), so on day 2 it is context that a resume carries and does not use, as most of
+  yesterday is on the working machine.
+- **It is a harder day for LR Memory.** Its nightly pass reads only what the user typed and writes at most six changes
+  a pass; on shelf's short day it wrote six in chain 2 and five in chain 3. The afternoon's two limits, stated as facts,
+  and what else the user says compete with the morning's facts for those six places, and its turns compete with the
+  morning's for the cue, with words that day 2's first message shares ("shelf", "desk"). On the short day, the printer
+  reached day 2 in chains 2 and 3 through the memory file alone.
+- **Each chain keeps its morning.** Resuming the morning's session, as a user does after lunch, keeps stage 1's three
+  mornings, so day 1 costs only the afternoon, and each chain is paired with its own short day.
+
+The nightly pass now reads back to day 1's start (`lrm.py sleep --hours`), for every job. On a user's machine it reads
+everything since its last pass; here each arm L starts with no pass behind it, and a first pass reads back one day.
+That covered day 1 in every run so far, but not a morning run more than a day before day 2.
+
+**Stage A, chain 2.** `run.py --job shelf --long --chains 2 --arms N`, which runs the afternoon and then N's day 2;
+then `--arms L,R`. Predicted:
+- The afternoon makes 35 to 80 model calls (median 50) and ends with 100k to 200k tokens of context (median 140k),
+  for 2M to 9M tokens (median 4M).
+- On day 2, R costs 1.0M to 3.2M tokens (median 1.65M), and N and L 0.2M to 0.45M each, so L/R is 0.07 to 0.4.
+- The stage costs about 6.3M tokens (3.5M to 13M).
+
+Stop after the afternoon if its last context is under 100k: it gets longer before anything else runs. Stop after
+day 2 if L uses more tokens than R, and find out why first.
+
+**Stage B, chains 1 and 3,** the same way: about 12.6M tokens (7M to 26M). Over the three chains, predicted:
+- L uses fewer tokens than R in 3 of 3, with L/R a median 0.2 (0.07 to 0.4).
+- Memory checks: R 8 to 9 of 12, L 6 to 9 of 12 (median 7), N 0 to 2 of 12. Rules: R 6 of 6, L 5 to 6 of 6,
+  N at most 4 of 6.
+- Paired over the chains and the six memory and rule checks, L passes where R fails at most once, and R where L fails
+  0 to 4 times (median 2). If LR Memory loses one, it is most likely F3, the printer.
+
+The token side is mostly arithmetic once the afternoon's length is known: each of R's calls carries all of yesterday.
+What the run measures is the rest: how many calls each arm makes, and whether LR Memory keeps the morning's facts
+through a long afternoon when a resumed session has all of them in its context.
+
 ## Limits
 
 - Day 1 here is short. On a real day, the context carried back is more than ten times larger, and so should be the
@@ -111,5 +162,7 @@ arms run again on it.
 - In money, a cache read costs a tenth of fresh input, so a resume costs less than its tokens suggest. The bench
   reports tokens, with their kinds.
 - 11 chains in three jobs, all written for this bench.
+- Every session here has a 1M-token window, as on the working machine. With Claude Code's default window of 200k, a
+  long day would be compacted, and a resume would carry its summary and the turns after it: another arm, not measured.
 - A session kept open all day is a third way. The long-session bench measured it: Claude Code's own smaller window
   saved 24–27% with nothing lost. That saving is Claude Code's, not LR Memory's.

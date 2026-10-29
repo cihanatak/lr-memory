@@ -13,6 +13,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -163,6 +164,23 @@ def selftest(runner) -> int:
                        and g["of_memory"] == 4, g["checks"]["T3"])
             if variant in ("", "keeps the accents", "prints question marks"):
                 print(f"     F3: {g['checks']['F3'][1]}")
+        given = checks.afternoon_files()
+        said = "\n".join(t for rel, t in given.items() if not rel.startswith("data/")) + "\n" + "\n".join(days.AFTERNOON)
+        found = [k for k, v in checks.LEAKS.items() if re.search(v, said, re.I)]
+        found += ["F2"] * checks.said(baseline, said) + ["C1"] * bool(checks.unreleased(said))
+        expect("the long afternoon's files and messages say none of day 1's facts", given["docs/holds_spec.md"]
+               and len(days.AFTERNOON) == 9 and not found, found)
+        checks.repo.remove(work)
+        shutil.copytree(folder / "day1", work)
+        for rel, text in given.items():
+            put(work, rel, text)
+        long1 = {"baseline": baseline, "state": checks.state(work, start, baseline, given)}
+        expect("the afternoon's files count as given, not as written", not any(long1["state"]["leaks"].values())
+               and long1["state"]["measured"] == "40", long1["state"])
+        g = checks.grade(work, long1, day_two(work, long1["state"]["measured"], baseline))
+        failed = sorted(k for k, v in g["checks"].items() if v[0] is False)
+        expect("day 2 done right, with the afternoon's files there, fails nothing", not failed,
+               "; ".join(f"{k}: {g['checks'][k][1]}" for k in failed))
         projects = folder / "config" / "projects" / "p"
         projects.mkdir(parents=True)
         rows = [{"type": "user", "entrypoint": "sdk-cli", "origin": {"kind": "sdk"},
@@ -172,6 +190,15 @@ def selftest(runner) -> int:
         changed = runner.typed(projects.parent)
         back = [json.loads(x) for x in (projects / "s.jsonl").read_text(encoding="utf-8").splitlines()]
         expect("day 1's transcript reads as typed", changed == 2 and back[0]["origin"]["kind"] == "human", back)
+        later = datetime.now(timezone.utc) - timedelta(hours=30)
+        rows = [{"type": "user", "timestamp": later.isoformat().replace("+00:00", "Z"), "entrypoint": "sdk-cli",
+                 "origin": {"kind": "sdk"}, "message": {"role": "user", "content": days.AFTERNOON[0]}}]
+        (projects / "s.jsonl").write_text("\n".join(json.dumps(r) for r in rows) + "\n", encoding="utf-8")
+        runner.typed(projects.parent)
+        back = json.loads((projects / "s.jsonl").read_text(encoding="utf-8"))
+        hours = runner.since_day_one(projects.parent)
+        expect("the afternoon reads as typed too, and the nightly pass reads back to day 1's start",
+               back["origin"]["kind"] == "human" and 30.9 < hours < 31.1, (back["origin"], hours))
         report = "Read 6 messages and 0 commits in 1 projects. Cost: 5,201 tokens (input 3,265, output 1,936)."
         expect("the sleep report's cost and message count are read",
                runner.tokens_of(report) == 5201 and runner.messages_read(report) == 6, report)

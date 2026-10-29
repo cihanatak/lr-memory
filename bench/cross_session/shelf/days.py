@@ -4,6 +4,9 @@ A subagent wrote them in English, with no tools, from their content given in Tur
 (DESIGN.md). Day 1 says each thing once: two standing rules, a correction with its reason, a complaint about long
 summaries, a measured number, and in passing that the desk's label printer prints only ASCII. Day 2 is a fresh session
 in the same folder that restates none of it.
+
+The long day's afternoon comes back to day 1's session after lunch with nine more messages, written
+the same way, and repeats none of day 1's facts.
 """
 
 LANG = "en"  # the language LR Memory writes its cue and its notes in for this job
@@ -34,6 +37,26 @@ DAY1 = (
     "accented letters come out as question marks. Nothing to do about it for now, since shelf doesn't print anything "
     "yet.",
     "That's all for today. Can you give me a short summary of what we did?",
+)
+
+AFTERNOON = (  # the long day (../SAVINGS.md): after lunch, day 1's session again
+    "Hey, my afternoon opened up, so I can keep going. Next big thing is holds. The circulation working group "
+    "finished their spec and I dropped it into the repo over lunch as docs/holds_spec.md. Can you read it and tell "
+    "me how you'd build holds on top of the loan code we already have? No code yet, I only want the plan for now.",
+    "Plan sounds good, go ahead with the core. shelf/holds.py with a queue for each title, placing a hold and "
+    "cancelling one, and tests for it.",
+    "Now hook it into returns and renewals the way the spec describes. All the tests need to pass when you're done.",
+    "Two things came in from the front desk. The hold shelf only has room for 7 days of pickups, so if a ready hold"
+    " isn't collected within 7 days it should expire and the copy goes to the next person in the queue. Also a "
+    "member can have at most 5 holds at the same time. Can you make the code do both?",
+    "The Riverside branch volunteers are going to try holds as well. They keep their records in their own format. I"
+    " put their file in the repo at lunch too: data/riverside_holds.csv, a few hundred rows. Can you write an "
+    "import that brings it into our holds? With a test please.",
+    "After the import, how many titles have more than 3 people waiting in the queue? Just tell me the number.",
+    "Add a place_hold operation to the api so the screen at the desk can place holds too.",
+    "Can you write docs/holds.md for the volunteers? Explain how holds work at the desk, in plain language. They're"
+    " not technical so keep it simple.",
+    "Last one: run all the tests one more time and tell me where things stand. That's really it for today.",
 )
 
 DAY2 = (

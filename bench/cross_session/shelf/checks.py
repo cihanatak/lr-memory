@@ -48,6 +48,11 @@ def start_files() -> dict:
     return seed.files()
 
 
+def afternoon_files() -> dict:
+    """The files the user puts into the repository before the long day's afternoon."""
+    return seed.afternoon_files()
+
+
 def prepare(work: Path) -> str:
     """Write the start into `work` and commit it as shelf 0.6.1; returns the commit."""
     for rel, text in start_files().items():
@@ -99,10 +104,11 @@ def unreleased(text: str) -> int:
     return len(re.findall(r"^\s*[-*+]\s+\S", rest[:end.start()] if end else rest, re.M))
 
 
-def state(work: Path, start: str, baseline=None) -> dict:
+def state(work: Path, start: str, baseline=None, also=None) -> dict:
     """What day 1 left that day 2 is graded against, and which rules and facts it wrote into the repository: the lines it
-    added to any file but the catalog export, and its commit messages."""
-    before, now = {rel: set(text.splitlines()) for rel, text in start_files().items()}, tree(work)
+    added to any file but the data, and its commit messages. `also` are files the user put in, which count as given."""
+    before = {rel: set(text.splitlines()) for rel, text in {**start_files(), **(also or {})}.items()}
+    now = tree(work)
     added = "\n".join(line for rel, text in now.items() if not rel.startswith("data/") for line in text.splitlines()
                       if line not in before.get(rel, ()))
     added += "\n" + repo.git(work, "log", "--format=%B", f"{start}..HEAD")
