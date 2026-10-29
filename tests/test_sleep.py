@@ -362,3 +362,20 @@ def test_the_command_reports_in_the_users_language(transcript, model):
     assert p.stdout.startswith("# LR Memory uykusu ") and "Deneme: hiçbir şey yazılmadı." in p.stdout
     assert "1 projede 1 mesaj ve 0 commit okundu. Maliyet: 1.050 token (girdi 1.000, çıktı 50)." in p.stdout
     assert "Kalıcı bir şey yok." in p.stdout
+
+
+@pytest.mark.parametrize("words, setting, language", [
+    ("Never push to main without asking me first, ever.", "", "English"),
+    ("Bundan sonra her commit'ten önce testleri çalıştır, tamam mı?", "", "Turkish"),
+    ("Never push to main without asking me first, ever.", "tr", "Turkish"),
+])
+def test_the_prompt_names_the_language_to_write_in(transcript, model, monkeypatch, words, setting, language):
+    """Left to "the language of the user's messages", the summary of a day of English messages came out in Spanish or
+    German in 4 of 6 calls; with English named, in 0 of 6."""
+    if setting:
+        monkeypatch.setenv("LR_MEMORY_LANG", setting)
+    write(transcript, [row("user", words, at=at(1))])
+    model.reply({"proposals": [], "summary": "Nothing durable."})
+    sleep.run(now=NOW)
+    text = model.prompt()
+    assert f"Write the memory files and the summary in {language}," in text and "language of the user's" not in text

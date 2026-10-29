@@ -118,7 +118,7 @@ Set these as environment variables, for example under `"env"` in `~/.claude/sett
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
-| `LR_MEMORY_LANG` | auto | `en` or `tr`. Auto writes Turkish when your messages read as Turkish. |
+| `LR_MEMORY_LANG` | auto | `en` or `tr`: the language LR Memory writes in, the memory files from the sleep pass included. Auto writes Turkish when your messages read as Turkish. |
 | `LR_MEMORY_DATA` | `~/.claude/lr-memory` | Where the index and the trails are kept. |
 | `LR_MEMORY_TRANSCRIPTS` | `~/.claude/projects` | Where the transcripts are read from. |
 | `LR_MEMORY_CUE` | on | `off` turns the cue off. |

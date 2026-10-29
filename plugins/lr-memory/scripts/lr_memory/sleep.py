@@ -78,6 +78,10 @@ SCHEMA = {
     "required": ["proposals", "summary"],
 }
 
+# the prompt names the language: left to "the language of the user's messages", the summary of a day of English
+# messages came out in Spanish or German in 4 of 6 calls, and in 0 of 6 once English was named
+LANGUAGE = {"en": "English", "tr": "Turkish"}
+
 PROMPT = """You keep the long-term memory of an AI coding assistant (Claude Code) that works with one user. Once a day
 you turn what happened in one of their projects into memory that lasts, the way sleep consolidates a day: keep rules,
 not events.
@@ -114,8 +118,8 @@ Rules:
 - description: one line on when the memory matters. index_line: - [Short title](file-name.md) — one-line hook, under
   200 characters.
 - scope: "general" for a rule that holds for all work, otherwise what it applies to.
-- Write the memory files and the summary in the language of the user's messages above, in the style of the existing
-  files. Use they/them for anyone whose pronouns are unknown.
+- Write the memory files and the summary in {language}, in the style of the existing files. Use they/them for anyone
+  whose pronouns are unknown.
 - Never store secrets, tokens, passwords or other people's personal data.
 - Routine progress, status updates and one-off task details are not memories. If nothing durable happened, propose
   nothing.
@@ -317,12 +321,12 @@ def listing(memdir: Path) -> tuple:
     return text, "\n".join(files)
 
 
-def prompt(memdir: Path, msgs: list, commits: dict, cands: dict, today: str) -> str:
+def prompt(memdir: Path, msgs: list, commits: dict, cands: dict, today: str, language: str = "English") -> str:
     index, files = listing(memdir)
     waiting = "\n".join(f"- {f} ({c['proposal'].get('title', '')}): backed on {len(c['nights'])} pass(es) since "
                         f"{c['first']}; evidence: {'; '.join(c['evidence'])[:300]}" for f, c in cands.items())
     return PROMPT.format(
-        max_apply=MAX_APPLY, today=today, index=index.strip() or "(none)", files=files or "(none)",
+        max_apply=MAX_APPLY, today=today, language=language, index=index.strip() or "(none)", files=files or "(none)",
         messages="\n".join(f"[{m['id']}] {m['at'].astimezone().strftime('%Y-%m-%d %H:%M')} ({m['session']}): "
                            f"{m['text']}" for m in msgs),
         commits="\n".join(f"{h}: {s}" for h, s in commits.items()) or "(none)", candidates=waiting or "(none)")
@@ -485,10 +489,10 @@ def _project(out: dict, found: dict, cands: dict, today: str, dry_run: bool, log
         return
     msgs, out["dropped"] = _fit(found["messages"])
     out["messages"], out["commits"] = len(msgs), len(found["commits"])
-    data = ask(prompt(memdir, msgs, found["commits"], cands, today))
+    lang = common.lang(" ".join(m["text"] for m in msgs[-50:]))
+    data = ask(prompt(memdir, msgs, found["commits"], cands, today, LANGUAGE[lang]))
     out["usage"], out["model"] = data.get("_usage", {}), data.get("_model", "")
     out["summary"] = str(data.get("summary") or "").strip()
-    lang = common.lang(" ".join(m["text"] for m in msgs[-50:]))
     backup = _dir() / "backup" / today / out["project"]
     for p in data.get("proposals") or []:
         if not isinstance(p, dict):

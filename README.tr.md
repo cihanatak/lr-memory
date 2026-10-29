@@ -118,7 +118,7 @@ Bunlar ortam değişkeni olarak verilir, örneğin `~/.claude/settings.json` iç
 
 | Değişken | Varsayılan | Anlamı |
 | --- | --- | --- |
-| `LR_MEMORY_LANG` | otomatik | `en` ya da `tr`. Otomatik seçim, mesajların Türkçe görünüyorsa Türkçe yazar. |
+| `LR_MEMORY_LANG` | otomatik | `en` ya da `tr`: LR Memory'nin yazdığı dil, uyku geçişinin yazdığı hafıza dosyaları dahil. Otomatik seçim, mesajların Türkçe görünüyorsa Türkçe yazar. |
 | `LR_MEMORY_DATA` | `~/.claude/lr-memory` | Dizinin ve iz kayıtlarının tutulduğu yer. |
 | `LR_MEMORY_TRANSCRIPTS` | `~/.claude/projects` | Kayıtların okunduğu yer. |
 | `LR_MEMORY_CUE` | açık | `off` ipucunu kapatır. |
