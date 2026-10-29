@@ -9,7 +9,8 @@
     python bench/cross_session/run.py --summary <results folder>     the tables again
 
 --job kargo runs the second job instead of ledgerly's: a Turkish shop's shipping module, in kargo/. --job shelf runs
-the third: a community library's circulation software, in shelf/.
+the third: a community library's circulation software, in shelf/. --arms R adds a day 2 with Claude Code alone that
+resumes day 1's session (SAVINGS.md).
 
 Day 2 runs in day 1's folder with day 1's config folder, so Claude Code's own memory carries over as it does on a
 user's machine; the arms of a chain take turns, each from a fresh copy of what day 1 left. A second run with the same
@@ -38,7 +39,7 @@ sys.path.insert(0, str(HERE))
 
 JOBS = ("ledgerly", "kargo", "shelf")  # each with its own days, checks and selftest; ledgerly's sit beside this file
 LRM = HERE.parents[1] / "plugins" / "lr-memory"
-ARMS = {"N": "Claude Code alone", "L": "with LR Memory"}
+ARMS = {"N": "Claude Code alone", "L": "with LR Memory", "R": "Claude Code alone, resuming day 1"}
 RECALL = re.compile(r"(?:run\.sh|lrm\.py)\\?\"? (?:search|show)")  # a recall command inside a tool call's JSON
 BUSY_S = 120  # LR Memory's sleep.BUSY_S: a MEMORY.md written this recently means a session is writing memory
 LOCK = threading.Lock()
@@ -208,7 +209,8 @@ def day_one(i: int, base: Path, args, claude: str, env: dict, out: Path) -> dict
 
 def day_two(i: int, arm: str, base: Path, day1: dict, args, claude: str, env: dict, out: Path) -> dict:
     """Day 2 from a fresh copy of what day 1 left: with Claude Code alone (N), or with LR Memory (L), whose nightly
-    pass runs first unless --no-sleep."""
+    pass runs first unless --no-sleep, or with Claude Code alone resuming day 1's session (R), its own way to keep
+    all of yesterday, which every call then carries."""
     lr = arm == "L"
     for name in ("work", "config", "lrdata"):
         if (base / name).exists():
@@ -228,9 +230,13 @@ def day_two(i: int, arm: str, base: Path, day1: dict, args, claude: str, env: di
             else:
                 row["sleep"] = sleep_pass(base, e, claude, args)
         row["memory_before"] = memory(base)
+        cmd = lr_run.command(claude, args, "1M", lr)
+        if arm == "R":  # day 1 was one session; its transcript sits in the config folder day 2 copied
+            yesterday = max((base / "config" / "projects").glob("*/*.jsonl"), key=lambda p: p.stat().st_mtime)
+            cmd += ["--resume", yesterday.stem]
         began = time.time()
-        events, turns = lr_run.session(lr_run.command(claude, args, "1M", lr), base / "work", e, days.DAY2,
-                                       args.turn_timeout, out / "streams" / f"c{i}-{tag(row)}.stderr")
+        events, turns = lr_run.session(cmd, base / "work", e, days.DAY2, args.turn_timeout,
+                                       out / "streams" / f"c{i}-{tag(row)}.stderr")
         lr_run.save(out, f"c{i}-{tag(row)}", events)
         m = lr_run.metrics(events)
         said = finals(events)
