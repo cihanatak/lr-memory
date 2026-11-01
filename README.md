@@ -6,6 +6,26 @@
 
 [Türkçe](README.tr.md)
 
+**A fresh Claude Code session knows nothing of yesterday. LR Memory brings yesterday back, from your own transcripts and on your own machine.**
+
+Day 1, in passing: *"Run tools/bench.py and tell me the p50. That's our baseline before the currency work."*<br>
+Day 2, a fresh session: *"Run tools/bench.py and add today's p50 to docs/performance.md, next to yesterday's baseline. […]"*
+
+> **Claude Code alone:** "Today's benchmark p50 is 0.7 ms, but I couldn't put it next to yesterday's baseline. […] I found no baseline anywhere in the repo or git history."
+>
+> **With LR Memory:** "Today's p50 is **0.7 ms**, against the 25.9 ms baseline."
+
+<sub>Both answers are verbatim, from chain 3 of the cross-session bench, which the cue was not designed on. Sonnet 5.5.</sub>
+
+| On the author's benches, Sonnet 5.5 | Claude Code alone | With LR Memory |
+| --- | --- | --- |
+| [What day 2 had to remember from day 1](bench/cross_session/DESIGN.md), 5 chains | 3 of 20 checks | 12 of 20, at the same tokens |
+| [A limit mentioned once, in passing](bench/cross_session/shelf/DESIGN.md), 3 chains | ignored in 3 of 3 | kept in 3 of 3 (sleep on) |
+| [Questions about yesterday's session](bench/long_session/README.md), 9 sessions each | 10 of 27 right | 27 of 27 right |
+| [Back to work after a long day](bench/cross_session/SAVINGS.md), 3 chains | resumed: 9 of 12 facts, 0.97–1.45M tokens | fresh: 9 of 12 facts, 0.20–0.27M tokens |
+
+The benches, the predictions written before each run and the scripts are in this repository. They are small (3 to 5 chains a job) and were written for this project; [the details](#measured-on-the-authors-machine) say what they do and do not show.
+
 Long Claude Code sessions lose their thread when the conversation is compacted. Every new session knows nothing of the old ones, and a correction you made last week has to be made again. LR Memory addresses all three:
 
 1. **A working note across compaction.** Right before Claude Code compacts a conversation, a hook reads the transcript and keeps what summaries tend to lose: your last messages word for word, the open tasks, the files changed, the commits and the latest test results. Right after, a short note made from them (at most 9,000 characters) goes back into the fresh context, with a pointer to the full record.
@@ -102,6 +122,7 @@ flowchart LR
   - [A second job](bench/cross_session/kargo/DESIGN.md), built so that nothing in it was fitted to the cue: a Turkish shop's shipping module, with messages written by a subagent that was not told how the cue matches words; three chains. With LR Memory 0.3.0, the measured number and the reason came back in all three. Claude Code alone wrote the number in none, and the reason only where day 1 had put it in the repository (7 wins, 1 loss, p = 0.07; with the first job's held-out chains, 15 and 2, p = 0.002).
   - Not carried by the cue: an API's rate limit, mentioned in passing in a message about something else. It shares no words with the later task that needs it. The sleep pass carried it in 1 of 3 chains. In the second job, day 2 cost 18% to 94% more with LR Memory: Claude Code alone, missing yesterday's number, asked for it instead of writing the day's report, in all three chains.
   - [A third job](bench/cross_session/shelf/DESIGN.md), for LR Memory 0.3.1, whose sleep pass writes what the user stated the same day, a fact said in passing included: a library's circulation software, three chains, nothing in it seen while 0.3.1 was built. On day 1 the user mentions, in a message about something else, that the desk's label printer prints only plain ASCII; day 2 asks for spine labels and never mentions it. The sleep pass wrote the limit into memory in all three chains, and the labels came out in plain ASCII. Claude Code alone printed the accents in all three. The reason and the measured number came back in 3 of 3, against 0 of 3. Over the six memory and rule checks: 13 wins and no loss (p = 0.0002). Claude Code's own memory wrote nothing on day 1 in two of the chains, and day 2 there renamed a function the lobby kiosk calls. On the same day-1 record, the sleep pass alone wrote the limit in 9 of 9 passes with 0.3.1 and in 4 of 9 with 0.3.0, which held it back as a candidate in the other five.
+- **Remember instead of resume.** The usual way to keep yesterday is to resume its session, which carries all of it back into every call. In [a long-day version of the third job](bench/cross_session/SAVINGS.md), day 1 ran on through an afternoon and an evening and ended at 102k–122k tokens of context. On day 2, a fresh session with LR Memory 0.3.1 and its nightly pass passed the same checks as Claude Code resuming day 1 (9 of 12 facts and 6 of 6 rules each, three chains), at 0.17–0.24 of the resume's tokens. Priced as the API prices them, where a cache read costs a tenth of fresh input, that is 0.20–0.26 of the resume a day later and 0.36–0.54 while its cache is still warm. A fresh session without LR Memory kept 1 of 12 facts and 2 of 6 rules.
 - **Index:** 575 transcripts (6.6 GB) were indexed from scratch in 41 seconds, into 77,471 parts and a 129 MB index. A search then takes about half a second, Python's start-up included.
 - **Search output:** a search prints 0.4–1.2 KB, a few hundred tokens. Grepping the raw `.jsonl` files for the same words printed 0.3–4.5 MB.
 - **Token load:** one day of long sessions read 586 million tokens over 1,108 model calls, with a median of 543,000 tokens per call. Every turn re-reads the whole context, so long contexts cost on every turn.

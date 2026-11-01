@@ -6,6 +6,26 @@
 
 [English](README.md)
 
+**Yeni bir Claude Code oturumu dünden habersiz başlar. LR Memory dünü geri getirir: senin kayıtlarından, senin makinende.**
+
+1. gün, laf arasında: *"Run tools/bench.py and tell me the p50. That's our baseline before the currency work."*<br>
+2. gün, yeni bir oturum: *"Run tools/bench.py and add today's p50 to docs/performance.md, next to yesterday's baseline. […]"*
+
+> **Tek başına Claude Code:** "Today's benchmark p50 is 0.7 ms, but I couldn't put it next to yesterday's baseline. […] I found no baseline anywhere in the repo or git history."
+>
+> **LR Memory ile:** "Today's p50 is **0.7 ms**, against the 25.9 ms baseline."
+
+<sub>İki cevap da birebir, oturumlar arası deney düzeninin 3. zincirinden; ipucu bu zincire bakılarak tasarlanmadı. Sonnet 5.5.</sub>
+
+| Yazarın deney düzenlerinde, Sonnet 5.5 | Tek başına Claude Code | LR Memory ile |
+| --- | --- | --- |
+| [2. günün 1. günden hatırlaması gerekenler](bench/cross_session/DESIGN.md), 5 zincir | 20 kontrolün 3'ü | 20'nin 12'si, aynı tokenla |
+| [Bir kez, laf arasında söylenen bir sınır](bench/cross_session/shelf/DESIGN.md), 3 zincir | 3 zincirin 3'ünde unutuldu | 3'ünde de uyuldu (uyku açık) |
+| [Dünkü oturumla ilgili sorular](bench/long_session/README.md), kol başı 9 oturum | 27'nin 10'u doğru | 27'nin 27'si doğru |
+| [Uzun bir günün ertesinde işe dönmek](bench/cross_session/SAVINGS.md), 3 zincir | oturumu sürdürerek: 12 bilginin 9'u, 0,97–1,45M token | yeni oturumla: 12 bilginin 9'u, 0,20–0,27M token |
+
+Deney düzenleri, her koşudan önce yazılan öngörüler ve betikler bu depoda. Küçükler (iş başına 3–5 zincir) ve bu proje için yazıldılar; neyi gösterip neyi göstermediklerini [ayrıntılar](#yazarın-makinesinde-ölçülenler) anlatıyor.
+
 Uzun Claude Code oturumları, sohbet özetlenince işin ipini kaybeder. Her yeni oturum eskilerden habersiz başlar ve geçen hafta yaptığın bir düzeltmeyi yeniden yapman gerekir. LR Memory üçünü de çözer:
 
 1. **Özetlemeyi aşan çalışma notu.** Claude Code sohbeti özetlemeden hemen önce bir kanca kaydı okur. Özetlerin en çok kaybettiklerini saklar: son mesajlarının birebir hâli, açık işler, değişen dosyalar, commit'ler ve son test sonuçları. Özetlemeden hemen sonra bunlardan çıkan kısa bir not (en çok 9.000 karakter) tam kayda giden yolla birlikte yeni bağlama geri konur.
@@ -102,6 +122,7 @@ flowchart LR
   - [İkinci bir iş](bench/cross_session/kargo/DESIGN.md), içindeki hiçbir şey ipucuna göre ayarlanmadan kuruldu: Türkçe bir mağazanın kargo modülü; mesajları, ipucunun sözcükleri nasıl eşleştirdiğini bilmeyen bir alt ajan yazdı; üç zincir. LR Memory 0.3.0 ile ölçülen sayı da gerekçe de üç zincirin hepsinde geri geldi. Tek başına Claude Code sayıyı hiçbirinde yazmadı, gerekçeyi ise yalnızca 1. günün onu depoya koyduğu yerde yazdı (7 kazanç, 1 kayıp, p = 0,07; ilk işin dışarıda tutulan zincirleriyle birlikte 15'e 2, p = 0,002).
   - İpucunun taşımadığı: başka bir konunun içinde lafın arasında söylenmiş bir API hız sınırı. Ona ihtiyaç duyan sonraki görevle ortak sözcüğü yok. Uyku geçişi onu 3 zincirin 1'inde taşıdı. İkinci işte 2. gün LR Memory ile %18 ile %94 arasında daha pahalıydı: tek başına Claude Code dünkü sayıyı bilmediği için günün raporunu yazmak yerine üç zincirde de onu sordu.
   - [Üçüncü bir iş](bench/cross_session/shelf/DESIGN.md), LR Memory 0.3.1 için. Bu sürümde uyku geçişi kullanıcının açıkça söylediğini, lafın arasında söylenmiş bir bilgi de olsa, aynı gün yazar. İş bir kütüphanenin ödünç verme yazılımı; üç zincir; 0.3.1 kurulurken hiçbir parçası görülmedi. 1. gün kullanıcı, başka bir konudaki mesajın içinde, gişedeki etiket yazıcısının yalnızca düz ASCII bastığını söyler; 2. gün sırt etiketleri istenir ve yazıcıdan hiç söz edilmez. Uyku geçişi bu sınırı üç zincirin hepsinde hafızaya yazdı ve etiketler düz ASCII çıktı. Tek başına Claude Code üçünde de aksanlı harfleri bastı. Gerekçe ve ölçülen sayı da 3 zincirin 3'ünde geri geldi, tek başına Claude Code'da hiçbirinde. Altı hafıza ve kural kontrolünde 13 kazanç, hiç kayıp yok (p = 0,0002). Claude Code'un kendi hafızası iki zincirde 1. gün hiçbir şey yazmadı; o zincirlerde 2. gün, lobideki kioskun çağırdığı bir işlevin adını değiştirdi. Aynı 1. gün kaydında uyku geçişi tek başına bu sınırı 0.3.1 ile 9 geçişin 9'unda yazdı, 0.3.0 ile 4'ünde; 0.3.0 kalan 5'inde onu aday olarak bekletti.
+- **Sürdürmek yerine hatırlamak.** Dünü korumanın alışılmış yolu oturumu sürdürmektir; o zaman dünün tamamı her çağrıda yeniden okunur. [Üçüncü işin uzun gün sürümünde](bench/cross_session/SAVINGS.md) 1. gün bir öğleden sonra ve bir akşamla sürdü ve 102 bin–122 bin tokenlık bağlamla bitti. 2. gün LR Memory 0.3.1 ve gece geçişiyle açılan yeni oturum, 1. günü sürdüren tek başına Claude Code'la aynı kontrolleri geçti (üç zincirde ikisi de 12 bilginin 9'u ve 6 kuralın 6'sı); sürdürmenin tokenlarının 0,17–0,24'ü kadar harcadı. API fiyatıyla, yani önbellekten okumanın yeni girdinin onda biri sayıldığı hesapla, bu oran bir gün sonra 0,20–0,26, önbellek henüz sıcakken 0,36–0,54. LR Memory'siz yeni oturum 12 bilginin 1'ini ve 6 kuralın 2'sini korudu.
 - **Dizin:** 575 kayıt (6,6 GB) sıfırdan 41 saniyede dizinlendi: 77.471 parça, 129 MB'lık bir dizin. Sonrasında bir arama, Python'un açılışı dahil yaklaşık yarım saniye sürüyor.
 - **Arama çıktısı:** bir arama 0,4–1,2 KB yazar, yani birkaç yüz token. Aynı sözcükler için ham `.jsonl` dosyalarında grep 0,3–4,5 MB yazdı.
 - **Token yükü:** uzun oturumlarla geçen bir günde 1.108 model çağrısında 586 milyon token okundu; çağrı başına ortanca 543.000. Her tur bütün bağlamı yeniden okur, bu yüzden uzun bağlam her turda maliyet çıkarır.
