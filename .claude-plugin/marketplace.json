@@ -5,7 +5,7 @@
     "url": "https://github.com/cihanatak"
   },
   "metadata": {
-    "description": "Claude Code plugins from LR (Living Runtime): memory that survives compaction and spans every session, and COL, which checks claims against what actually ran."
+    "description": "Claude Code plugins from LR (Living Runtime): memory that survives compaction and spans every session, and COL (Cognitive Operating Loop), which checks claims against what actually ran."
   },
   "plugins": [
     {
@@ -18,7 +18,7 @@
     {
       "name": "col",
       "source": "./plugins/col",
-      "description": "Checks Claude's last message against what ran (commits it names, files it cites, test counts it gives), keeps a ledger of measurable predictions before long jobs and irreversible steps and compares them with the results, stops a commit or push that would carry a key, and asks for rival explanations when a fix does not hold. Local; no model calls.",
+      "description": "Cognitive Operating Loop: predict, act, check. Checks Claude's last message against what ran (commits it names, files it cites, test counts it gives), keeps a ledger of measurable predictions before long jobs and irreversible steps and compares them with the results, stops a commit or push that would carry a key, and asks for rival explanations when a fix does not hold. Local; no model calls.",
       "category": "productivity",
       "keywords": ["verification", "claims", "predictions", "calibration", "secrets", "git", "debugging"]
     }

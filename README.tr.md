@@ -165,7 +165,7 @@ Testler yalnız geçici klasörler kullanır. Gerçek `~/.claude`'u hiç okumaz,
 
 ## COL, buradaki öbür eklenti
 
-Bu pazaryerinde LR Memory'den bağımsız ikinci bir eklenti var. **COL** dört iş yapar:
+Bu pazaryerinde LR Memory'den bağımsız ikinci bir eklenti var. **COL (Cognitive Operating Loop, bilişsel işletim döngüsü)** dört iş yapar:
 - Claude'un son mesajını gerçekten çalışanla karşılaştırır: andığı commit var olmalı, verdiği dosya diskte olmalı, söylediği test sayısı gerçek test çıktısında geçmeli.
 - Uzun işlerden ve geri alınamayan adımlardan önce ölçülebilir öngörülerden bir defter tutar ve onları sonuçlarla karşılaştırır.
 - Bir anahtar taşıyacak commit'i ya da push'u durdurur.

@@ -1,10 +1,12 @@
 ![Living Runtime: Claude Code için açık kaynak eklentiler LR Memory ve COL](https://raw.githubusercontent.com/cihanatak/lr-memory/main/assets/banner.jpg)
 
-# Claude Code için COL
+# Claude Code için COL: Cognitive Operating Loop
 
 [![tests](https://github.com/cihanatak/lr-memory/actions/workflows/tests.yml/badge.svg)](https://github.com/cihanatak/lr-memory/actions/workflows/tests.yml)
 
 [English](README.md)
+
+*Ne olacağını söyle, yap, gerçekte ne olduğunu denetle; bir düzeltme tutmazsa başkasını denemeden önce nedenini sor: dikkatli bir zihnin kendi işi üzerinde döndürdüğü döngü, Claude için kancalarla.*
 
 Bir ajan, hiçbir test çalışmamışken turu "Tamam, 12 testin hepsi geçti" diye bitirebilir. Var olmayan bir commit'ten söz edebilir ya da commit'lememesi gereken bir anahtarı commit'leyebilir. Modelden kendini denetlemesini istemek bunu çözmüyor. Dışarıdan bir işaret olmadan kendi kendini düzeltmek cevapları daha doğru yapmıyor (Huang ve ark., [arXiv 2310.01798](https://arxiv.org/abs/2310.01798)). Ajanlar kendi başarı şanslarını da fazlasıyla yüksek görüyor: zamanın yalnız %22'sinde başaran bazı ajanlar %77 başarı bekliyor (Kaddour ve ark., [arXiv 2602.06948](https://arxiv.org/abs/2602.06948)).
 
