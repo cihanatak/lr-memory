@@ -1,0 +1,243 @@
+{
+ "as_of": "2026-11-11",
+ "source": {
+  "en": "The author's own machine, the full private system (LR, COL, scnc) of which these plugins are a part. Record before 7 Nov 2026: 14 labelled nights, 471 operator messages, 74 corrections. Since 7 Nov a 28-day on/off experiment is running; its numbers are sealed until 5 Dec.",
+  "tr": "Yazarın kendi makinesi; bu eklentilerin parçası olduğu özel sistemin tamamı (LR, COL, scnc). 7 Kasım 2026 öncesi kayıt: etiketlenmiş 14 gece, 471 operatör mesajı, 74 düzeltme. 7 Kasım'dan beri 28 günlük açık/kapalı deney sürüyor; sayıları 5 Aralık'a kadar kapalı."
+ },
+ "aims": [
+  {
+   "id": 1,
+   "status": "fails",
+   "status_text": {
+    "en": "Fails (under repeated compaction)",
+    "tr": "Tutmuyor (üst üste özetlemede)"
+   },
+   "yardstick": {
+    "en": "Share of old information still at hand after compaction",
+    "tr": "Özetlemeden sonra eski bilginin elde kalan payı"
+   },
+   "measured": {
+    "en": "After one compaction Claude Code's own summary loses nothing either, so LR adds 0. After repeated compactions about 90% of the operator's old messages are carried by neither; the note adds about 2 points.",
+    "tr": "Tek özetlemede Claude Code'un özeti de kayıpsız, LR'nin payı 0. Üst üste özetlemede eski operatör mesajlarının ~%90'ını ikisi de taşımıyor; not ~2 puan ekliyor"
+   },
+   "measured_on": "2026-11-11",
+   "evidence": "the author's record before 7 Nov 2026"
+  },
+  {
+   "id": 2,
+   "status": "partial",
+   "status_text": {
+    "en": "Partial",
+    "tr": "Kısmen"
+   },
+   "yardstick": {
+    "en": "Is the source among the top 3 results",
+    "tr": "Aranan bilginin kaynağı ilk 3 sonuçta mı"
+   },
+   "measured": {
+    "en": "8 of 9 questions; with real messages as the query, 3 of 8 exact and 3 partial.",
+    "tr": "9 soruda 8; gerçek mesaj sorgu olunca 8'de 3 tam, 3 kısmi"
+   },
+   "measured_on": "2026-11-11",
+   "evidence": "the author's record before 7 Nov 2026"
+  },
+  {
+   "id": 3,
+   "status": "works",
+   "status_text": {
+    "en": "Works",
+    "tr": "Çalışıyor"
+   },
+   "yardstick": {
+    "en": "How many corrections produced a rule",
+    "tr": "Düzeltmelerin kaçından kural doğdu"
+   },
+   "measured": {
+    "en": "At least 24 of 74 corrections produced a rule or an addition to one (a lower bound; one reader).",
+    "tr": "74 düzeltmenin en az 24'ünden bir kural ya da ek doğdu (alt sınır; tek okuyucu)"
+   },
+   "measured_on": "2026-11-11",
+   "evidence": "the author's record before 7 Nov 2026"
+  },
+  {
+   "id": 4,
+   "status": "fails",
+   "status_text": {
+    "en": "Fails",
+    "tr": "Tutmuyor"
+   },
+   "yardstick": {
+    "en": "When a rule existed and the correction still came, had the rule been brought back",
+    "tr": "Kural yazılıyken düzeltme geldiyse, kural o sırada geri gelmiş miydi"
+   },
+   "measured": {
+    "en": "In 3 of the 57 corrections that had a rule beforehand, that rule's reminder had come in the previous 24 hours; 15 rules ever got a reminder.",
+    "tr": "Önceden kuralı olan (var ya da kısmen) 57 düzeltmenin 3'ünde kuralın ipucu son 24 saatte gelmişti; ipucu en az bir kez gelen kural 15"
+   },
+   "measured_on": "2026-11-11",
+   "evidence": "the author's record before 7 Nov 2026"
+  },
+  {
+   "id": 5,
+   "status": "partial",
+   "status_text": {
+    "en": "Partial (consolidates, does not forget)",
+    "tr": "Kısmen (pekiştirme var, unutma yok)"
+   },
+   "yardstick": {
+    "en": "Rules written and rules retired",
+    "tr": "Yazılan ve sönen kural"
+   },
+   "measured": {
+    "en": "32 rules written in 16 nights; files went from 408 to 452 and never-opened ones from 210 to 242; nothing was retired.",
+    "tr": "16 gecede 32 kural yazıldı; dosya 408'den 452'ye, hiç açılmayan 210'dan 242'ye çıktı; söndürme yok"
+   },
+   "measured_on": "2026-11-11",
+   "evidence": "the author's record before 7 Nov 2026"
+  },
+  {
+   "id": 6,
+   "status": "fails",
+   "status_text": {
+    "en": "Fails",
+    "tr": "Tutmuyor"
+   },
+   "yardstick": {
+    "en": "Corrections whose rule was already written",
+    "tr": "Kuralı önceden yazılı olan düzeltme"
+   },
+   "measured": {
+    "en": "24 of 74 (32%); in 33 more a related but more general rule existed.",
+    "tr": "74'ün 24'ü (%32); 33'ünde ilgili ama daha genel bir kural vardı"
+   },
+   "measured_on": "2026-11-11",
+   "evidence": "the author's record before 7 Nov 2026"
+  },
+  {
+   "id": 7,
+   "status": "partial",
+   "status_text": {
+    "en": "Partial (LR's share not separated)",
+    "tr": "Kısmen (LR'nin payı ayrılmadı)"
+   },
+   "yardstick": {
+    "en": "Context per call, and the correction rate",
+    "tr": "Çağrı başına bağlam ve düzeltme oranı"
+   },
+   "measured": {
+    "en": "518.8k to 236.4k tokens per call (-54%), most of it from Claude Code's own setting; the correction rate did not change significantly.",
+    "tr": "518,8 binden 236,4 bine (−%54), çoğu Claude Code ayarından; düzeltme oranı anlamlı değişmedi"
+   },
+   "measured_on": "2026-11-11",
+   "evidence": "the author's record before 7 Nov 2026"
+  },
+  {
+   "id": 8,
+   "status": "works",
+   "status_text": {
+    "en": "Works (baseline without hooks due 5 Dec)",
+    "tr": "Çalışıyor (kancasız taban 5 Aralık'ta)"
+   },
+   "yardstick": {
+    "en": "Claims that do not hold: caught, and reaching the operator",
+    "tr": "Tutmayan iddia: yakalanan ve operatöre ulaşan"
+   },
+   "measured": {
+    "en": "15 caught in 1,370 turns; 1 of the operator's 74 corrections was of this kind.",
+    "tr": "1.370 turda 15 yakalandı; operatörün 74 düzeltmesinin 1'i bu türden"
+   },
+   "measured_on": "2026-11-11",
+   "evidence": "the author's record before 7 Nov 2026"
+  },
+  {
+   "id": 9,
+   "status": "fails",
+   "status_text": {
+    "en": "Fails",
+    "tr": "Tutmuyor"
+   },
+   "yardstick": {
+    "en": "Corrections for misunderstanding",
+    "tr": "Yanlış anlama düzeltmesi"
+   },
+   "measured": {
+    "en": "18 of 74. The end-of-turn referee: 369 looks, 13 turned back, 1.79M tokens; it caught 0 of 7 known misses.",
+    "tr": "74'ün 18'i; hakem 369 bakış, 13 geri çevirme, 1,79 milyon token; amaç kaçırmayı 7 örnekte 0 kez yakaladı"
+   },
+   "measured_on": "2026-11-11",
+   "evidence": "the author's record before 7 Nov 2026"
+  },
+  {
+   "id": 10,
+   "status": "partial",
+   "status_text": {
+    "en": "Partial (the record and the guard work; 45% of predictions get compared)",
+    "tr": "Kısmen (kayıt ve koruma çalışıyor; öngörülerin %45'i karşılaştırılıyor)"
+   },
+   "yardstick": {
+    "en": "Predictions on record and compared, forbidden writes stopped",
+    "tr": "Öngörü kaydı ve karşılaştırma, durdurulan yasak yazma"
+   },
+   "measured": {
+    "en": "820 predictions recorded; 371 compared by number (146 held, 225 missed), 139 could not be compared, 310 have no result; 6 forbidden writes stopped.",
+    "tr": "820 öngörü kaydedildi; 371'i sayıyla karşılaştırıldı (146 tuttu, 225 tutmadı), 139'u karşılaştırılamadı, 310'unun sonucu yok; 6 yasak yazma durduruldu"
+   },
+   "measured_on": "2026-11-11",
+   "evidence": "the author's record before 7 Nov 2026"
+  },
+  {
+   "id": 11,
+   "status": "unused",
+   "status_text": {
+    "en": "Unused",
+    "tr": "Kullanılmıyor"
+   },
+   "yardstick": {
+    "en": "Hypothesis lines",
+    "tr": "Hipotez satırı"
+   },
+   "measured": {
+    "en": "3 lines, all in one session, 24 Oct to 7 Nov; none recorded by the ledger.",
+    "tr": "24 Eki–7 Kas'ta 3 satır, tek sohbette; kayıt 0"
+   },
+   "measured_on": "2026-11-11",
+   "evidence": "the author's record before 7 Nov 2026"
+  },
+  {
+   "id": 12,
+   "status": "unused",
+   "status_text": {
+    "en": "Unused",
+    "tr": "Kullanılmıyor"
+   },
+   "yardstick": {
+    "en": "Use of the experiment step",
+    "tr": "Deney adımının kullanımı"
+   },
+   "measured": {
+    "en": "Not used.",
+    "tr": "Kullanılmıyor"
+   },
+   "measured_on": "2026-11-11",
+   "evidence": "the author's record before 7 Nov 2026"
+  },
+  {
+   "id": 13,
+   "status": "unclear",
+   "status_text": {
+    "en": "Unclear (too few)",
+    "tr": "Belirsiz (sayı az)"
+   },
+   "yardstick": {
+    "en": "A second failure in a row going on to a third",
+    "tr": "İkinci hatadan üçüncüye geçiş"
+   },
+   "measured": {
+    "en": "October: 33 of 127 (26%). 30 Oct to 7 Nov: 1 of 11 (9%), not separable (p = 0.19). \"Verified with the same measurement\" is not measured.",
+    "tr": "Ekim tabanı 127'de 33 (%26); 30 Eki–7 Kas 11'de 1 (%9), fark ayırt edilemiyor (p = 0,19); \"aynı ölçümle doğrulama\" ölçülmedi"
+   },
+   "measured_on": "2026-11-11",
+   "evidence": "the author's record before 7 Nov 2026"
+  }
+ ]
+}

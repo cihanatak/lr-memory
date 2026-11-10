@@ -1,10 +1,67 @@
-![Living Runtime: LR Memory and COL, open-source plugins for Claude Code](https://raw.githubusercontent.com/cihanatak/lr-memory/main/assets/banner.jpg)
+![Living Runtime: open-source plugins for Claude Code. LR Memory, COL and the mind panel](https://raw.githubusercontent.com/cihanatak/lr-memory/main/assets/banner.jpg)
 
-# LR Memory for Claude Code
+# Living Runtime for Claude Code
 
 [![tests](https://github.com/cihanatak/lr-memory/actions/workflows/tests.yml/badge.svg)](https://github.com/cihanatak/lr-memory/actions/workflows/tests.yml)
 
 [Türkçe](README.tr.md)
+
+**Not more intelligence: better use of the intelligence that is already there.** Living Runtime is a layer of three plugins on top of Claude Code. It remembers, it checks itself, and it shows its own state: where it works and where it does not.
+
+| Plugin | What it is for | Install |
+| --- | --- | --- |
+| [**LR Memory**](#lr-memory) | Memory: a working note across compaction, earlier turns that come back on their own, a search over every past session, a daily pass that turns your own words into rules | `/plugin install lr-memory@living-runtime` |
+| [**COL**](plugins/col/README.md) | Self-check: claims checked against what actually ran, a ledger of predictions, keys kept out of commits, rival explanations when a fix does not hold | `/plugin install col@living-runtime` |
+| [**Mind**](plugins/mind/README.md) | The panel: the layer's 13 aims on one local page, every number read from your own files | `/plugin install mind@living-runtime` |
+
+Add the marketplace once, then install the ones you want:
+
+```
+/plugin marketplace add cihanatak/lr-memory
+```
+
+## The mind panel
+
+![The mind panel: a glass brain with 13 numbered nodes, and the 13 aims listed with their status](assets/panel.png)
+
+<sub>The author's machine, 11 Nov 2026. Nothing on the page is sample data.</sub>
+
+One local page for the whole layer. For each of the 13 aims it shows what the aim is, how it is measured, what the last measurement says, and live numbers read from your own logs, transcripts and memory files at the moment the page is made.
+
+- **Nothing is mock.** Every number names the file it came from and how it was computed. A source that is not there shows as "source missing"; a number that was never measured shows as "not measured".
+- **It says where it fails.** A status is written only after a measurement, in a scorecard you keep. Until then every aim shows as not measured.
+- **Local.** Python's standard library, one HTML file, no network request and no model calls.
+- **The brain is an analogy:** a way to read the system, not a claim about brains.
+
+```
+/mind:panel
+```
+
+From a clone, `sh plugins/mind/scripts/run.sh --open` does the same. See [plugins/mind/README.md](plugins/mind/README.md).
+
+## The 13 aims, and where they stand
+
+The layer is built toward thirteen aims: seven for memory (LR), three for self-check (COL) and three for finding causes (scnc). This is the author's scorecard as of 11 Nov 2026, measured on the author's own record with the full private system these plugins are a part of: **2** works · **4** partial · **4** fails · **2** unused · **1** unclear.
+
+| # | Part | Aim | Status |
+| --- | --- | --- | --- |
+| 1 | LR | The conversation never closes; compaction loses nothing | ✕ fails |
+| 2 | LR | What happened is kept word for word and found when needed | ◐ partial |
+| 3 | LR | Corrections and confirmed lessons become rules | ✓ works |
+| 4 | LR | A rule comes back on its own at the moment it applies | ✕ fails |
+| 5 | LR | Consolidates at night and lets the useless fade | ◐ partial |
+| 6 | LR | The same mistake is not made twice | ✕ fails |
+| 7 | LR | Context stays small and quality does not drop | ◐ partial |
+| 8 | COL | Work that was not done is never reported as done | ✓ works |
+| 9 | COL | What is really wanted is understood and the work goes that way | ✕ fails |
+| 10 | COL | A prediction before a big step, a comparison after; what is forbidden stays protected | ◐ partial |
+| 11 | scnc | No jumping to the first explanation; rivals are set up | ○ unused |
+| 12 | scnc | A cheap experiment decides | ○ unused |
+| 13 | scnc | The fix goes to the root cause and is verified with the same measurement | ? unclear |
+
+The yardstick, the last measurement and the brain region of each aim are in [docs/AIMS.md](docs/AIMS.md); the numbers are in [docs/scorecard.json](docs/scorecard.json). A blind on/off experiment on real work runs until 5 Dec 2026, and the numbers after 7 Nov stay sealed until then.
+
+## LR Memory
 
 **A fresh Claude Code session knows nothing of yesterday. LR Memory brings yesterday back, from your own transcripts and on your own machine.**
 
@@ -163,9 +220,9 @@ python -m pytest tests
 
 The tests use temporary folders only. They never read your real `~/.claude`, start Claude or touch the network.
 
-## COL, the other plugin here
+## COL
 
-This marketplace has a second plugin, independent of LR Memory. **COL (Cognitive Operating Loop)** does four things:
+**COL (Cognitive Operating Loop)** is independent of LR Memory. It does four things:
 - It checks Claude's last message against what actually ran: a commit it names must exist, a file it cites must be on disk, and a test count must appear in real test output.
 - It keeps a ledger of measurable predictions before long jobs and steps that cannot be taken back, and compares them with the results.
 - It stops a commit or a push that would carry a key.

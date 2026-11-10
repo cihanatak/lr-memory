@@ -5,7 +5,7 @@
     "url": "https://github.com/cihanatak"
   },
   "metadata": {
-    "description": "Claude Code plugins from LR (Living Runtime): memory that survives compaction and spans every session, and COL (Cognitive Operating Loop), which checks claims against what actually ran."
+    "description": "Claude Code plugins from LR (Living Runtime), built for better use of the intelligence that is already there: memory that survives compaction and spans every session, COL (Cognitive Operating Loop), which checks claims against what actually ran, and the mind panel, one local page that shows where each of the layer's 13 aims stands, from your own files."
   },
   "plugins": [
     {
@@ -21,6 +21,13 @@
       "description": "Cognitive Operating Loop: predict, act, check. Checks Claude's last message against what ran (commits it names, files it cites, test counts it gives), keeps a ledger of measurable predictions before long jobs and irreversible steps and compares them with the results, stops a commit or push that would carry a key, and asks for rival explanations when a fix does not hold. Local; no model calls.",
       "category": "productivity",
       "keywords": ["verification", "claims", "predictions", "calibration", "secrets", "git", "debugging"]
+    },
+    {
+      "name": "mind",
+      "source": "./plugins/mind",
+      "description": "The mind panel: one local page for LR Memory, COL and scnc. For each of 13 aims it shows what the aim is, how it is measured, what the last measurement says, and live numbers read from your own logs, transcripts and memory files when the page is made. Every number names its source; nothing is sample data. Standard library only; no network, no model calls.",
+      "category": "productivity",
+      "keywords": ["dashboard", "metrics", "memory", "verification", "local"]
     }
   ]
 }

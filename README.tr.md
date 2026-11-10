@@ -1,10 +1,67 @@
-![Living Runtime: Claude Code için açık kaynak eklentiler LR Memory ve COL](https://raw.githubusercontent.com/cihanatak/lr-memory/main/assets/banner.jpg)
+![Living Runtime: Claude Code için açık kaynak eklentiler. LR Memory, COL ve zihin paneli](https://raw.githubusercontent.com/cihanatak/lr-memory/main/assets/banner.jpg)
 
-# Claude Code için LR Memory
+# Claude Code için Living Runtime
 
 [![tests](https://github.com/cihanatak/lr-memory/actions/workflows/tests.yml/badge.svg)](https://github.com/cihanatak/lr-memory/actions/workflows/tests.yml)
 
 [English](README.md)
+
+**Daha çok zekâ değil: var olan zekâyı daha iyi kullanmak.** Living Runtime, Claude Code'un üstünde çalışan üç eklentilik bir katmandır. Hatırlar, kendini denetler ve kendi durumunu gösterir: nerede çalıştığını da, nerede çalışmadığını da.
+
+| Eklenti | Ne işe yarar | Kurulum |
+| --- | --- | --- |
+| [**LR Memory**](#lr-memory) | Hafıza: özetlemeden sonra çalışma notu, kendiliğinden geri gelen eski turlar, bütün eski oturumlarda arama, sözlerinizi kurala çeviren günlük geçiş | `/plugin install lr-memory@living-runtime` |
+| [**COL**](plugins/col/README.tr.md) | Öz denetim: iddiaların gerçekten çalışanla karşılaştırılması, öngörü defteri, commit'e anahtar girmemesi, düzeltme tutmayınca rakip açıklamalar | `/plugin install col@living-runtime` |
+| [**Mind**](plugins/mind/README.tr.md) | Panel: katmanın 13 amacı tek bir yerel sayfada, her sayı kendi dosyalarınızdan | `/plugin install mind@living-runtime` |
+
+Pazar yerini bir kez ekleyin, sonra istediklerinizi kurun:
+
+```
+/plugin marketplace add cihanatak/lr-memory
+```
+
+## Zihin paneli
+
+![Zihin paneli: 13 numaralı düğümü olan cam bir beyin ve durumlarıyla 13 amaç](assets/panel.png)
+
+<sub>Yazarın makinesi, 11 Kasım 2026. Sayfadaki hiçbir şey örnek veri değildir.</sub>
+
+Bütün katman için tek bir yerel sayfa. 13 amacın her biri için amacın ne olduğunu, nasıl ölçüldüğünü, son ölçümün ne dediğini ve sayfa oluşturulduğu anda kendi günlüklerinizden, kayıtlarınızdan ve bellek dosyalarınızdan okunan canlı sayıları gösterir.
+
+- **Hiçbir şey mock değil.** Her sayı hangi dosyadan geldiğini ve nasıl hesaplandığını yanında taşır. Kaynağı olmayan "kaynak yok", hiç ölçülmemiş olan "ölçülmedi" görünür.
+- **Nerede tutmadığını söyler.** Durum ancak bir ölçümden sonra, sizin tuttuğunuz bir karneye yazılır. O zamana kadar her amaç ölçülmedi görünür.
+- **Yerel.** Python'un standart kütüphanesi, tek bir HTML dosyası; ağ isteği de model çağrısı da yok.
+- **Beyin bir benzetmedir:** sistemi okumanın bir yolu, beyin hakkında bir iddia değil.
+
+```
+/mind:panel
+```
+
+Depoyu klonladıysanız `sh plugins/mind/scripts/run.sh --open --lang tr` aynı işi yapar. Ayrıntı: [plugins/mind/README.tr.md](plugins/mind/README.tr.md).
+
+## 13 amaç ve ne durumdalar
+
+Katman on üç amaca göre kuruldu: yedisi hafıza (LR), üçü öz denetim (COL), üçü sebep bulma (scnc). Bu, yazarın 11 Kasım 2026 tarihli karnesidir; yazarın kendi kaydında, bu eklentilerin parçası olduğu özel sistemin tamamıyla ölçüldü: **2** çalışıyor · **4** kısmen · **4** tutmuyor · **2** kullanılmıyor · **1** belirsiz.
+
+| # | Bölüm | Amaç | Durum |
+| --- | --- | --- | --- |
+| 1 | LR | Sohbet hiç kapanmaz, özetlemede bilgi kaybolmaz | ✕ tutmuyor |
+| 2 | LR | Yaşanan birebir kaydedilir, gerekince bulunur | ◐ kısmen |
+| 3 | LR | Düzeltmeler ve doğrulanmış dersler kurala döner | ✓ çalışıyor |
+| 4 | LR | Kural gereken anda kendiliğinden geri gelir | ✕ tutmuyor |
+| 5 | LR | Gece pekiştirir, işe yaramayanı söndürür | ◐ kısmen |
+| 6 | LR | Aynı hata ikinci kez yapılmaz | ✕ tutmuyor |
+| 7 | LR | Bağlam küçük kalır, kalite düşmez | ◐ kısmen |
+| 8 | COL | Yapılmamış iş "bitti" diye sunulmaz | ✓ çalışıyor |
+| 9 | COL | Gerçekten ne istendiği anlaşılır, iş o yöne gider | ✕ tutmuyor |
+| 10 | COL | Büyük adımdan önce öngörü, sonra karşılaştırma; yasak korunur | ◐ kısmen |
+| 11 | scnc | İlk açıklamaya atlanmaz, rakip açıklamalar kurulur | ○ kullanılmıyor |
+| 12 | scnc | Kararı ucuz bir deney verir | ○ kullanılmıyor |
+| 13 | scnc | Düzeltme kök sebebe yapılır, aynı ölçümle doğrulanır | ? belirsiz |
+
+Her amacın ölçütü, son ölçümü ve beyin bölgesi [docs/AIMS.tr.md](docs/AIMS.tr.md) dosyasında; sayılar [docs/scorecard.json](docs/scorecard.json) dosyasında. Gerçek işte kör bir açık/kapalı deney 5 Aralık 2026'ya kadar sürüyor; 7 Kasım'dan sonraki sayılar o güne kadar kapalı.
+
+## LR Memory
 
 **Yeni bir Claude Code oturumu dünden habersiz başlar. LR Memory dünü geri getirir: senin kayıtlarından, senin makinende.**
 
@@ -163,9 +220,9 @@ python -m pytest tests
 
 Testler yalnız geçici klasörler kullanır. Gerçek `~/.claude`'u hiç okumaz, Claude'u başlatmaz ve ağa çıkmaz.
 
-## COL, buradaki öbür eklenti
+## COL
 
-Bu pazaryerinde LR Memory'den bağımsız ikinci bir eklenti var. **COL (Cognitive Operating Loop, bilişsel işletim döngüsü)** dört iş yapar:
+**COL (Cognitive Operating Loop, bilişsel işletim döngüsü)** LR Memory'den bağımsızdır. Dört iş yapar:
 - Claude'un son mesajını gerçekten çalışanla karşılaştırır: andığı commit var olmalı, verdiği dosya diskte olmalı, söylediği test sayısı gerçek test çıktısında geçmeli.
 - Uzun işlerden ve geri alınamayan adımlardan önce ölçülebilir öngörülerden bir defter tutar ve onları sonuçlarla karşılaştırır.
 - Bir anahtar taşıyacak commit'i ya da push'u durdurur.

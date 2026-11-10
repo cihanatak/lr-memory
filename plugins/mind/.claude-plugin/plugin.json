@@ -1,0 +1,14 @@
+{
+  "name": "mind",
+  "displayName": "Mind panel",
+  "version": "0.1.0",
+  "description": "One local page for LR Memory, COL and scnc: what each of 13 aims is for, how it is measured, what the last measurement says, and vital signs read from your own logs, transcripts and memory files when the page is made. Every number carries its source; what is missing or was never measured is shown as such. Standard library only; no network.",
+  "author": {
+    "name": "Cihan Atak",
+    "url": "https://github.com/cihanatak"
+  },
+  "homepage": "https://github.com/cihanatak/lr-memory/tree/main/plugins/mind",
+  "repository": "https://github.com/cihanatak/lr-memory",
+  "license": "MIT",
+  "keywords": ["dashboard", "memory", "verification", "debugging", "metrics", "local"]
+}
